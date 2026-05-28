@@ -170,3 +170,10 @@ echo -e "\e[33m--UFW--\e[0m"
 check_ufw
 check_mdatp
 check_aa
+echo -e "\e[33m--Kernel Modules--\n\e[0m"
+check_kernel usb_storage
+check_kernel cramfs
+check_kernel freevxfs
+check_kernel hfs
+check_kernel udf
+check_ipfwd
