@@ -139,7 +139,7 @@ check_ipfwd(){
     fi
 }
 echo -e "\e[33m--SYSTEM HARDENING--\n\e[0m"
-echo -e "\e[33m--FILE PERMISSIONS--\n\e[0m"
+echo -e "\e[33m--FILE PERMISSIONS--\e[0m"
 check 0177 /etc/crontab root
 check 0077 /etc/cron.daily root
 check 0077 /etc/cron.weekly root
@@ -165,7 +165,7 @@ check_service rsyslog active
 check_ufw
 check_mdatp
 check_aa
-echo -e "\e[33m--Kernel Modules--\n\e[0m"
+echo -e "\e[33m--Kernel Modules--\e[0m"
 check_kernel usb_storage
 check_kernel cramfs
 check_kernel freevxfs
