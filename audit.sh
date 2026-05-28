@@ -62,7 +62,7 @@ check_ufw() {
 
     if [[ "result" == "OK" ]]; then
         pass "UFW is actvie and incomming is denied"
-        "$output"
+         echo "$output"
     else 
         fail "UFW is inactive, or configuration needs to be reviewed"
         echo "$output"
