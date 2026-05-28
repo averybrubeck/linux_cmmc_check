@@ -1,12 +1,12 @@
 #!/bin/bash
 pass() {
-    printf '/033[32mOK\033[0m %s\n' "$*"
+    printf '\033[32mOK\033[0m %s\n' "$*"
 }
 fail() {
-    printf '/033[31mOK\033[0m %s\n' "$*"
+    printf '\033[31mOK\033[0m %s\n' "$*"
 }
 warn() {
-    printf '/033[33mOK\033[0m %s\n' "$*"
+    printf '\033[33mOK\033[0m %s\n' "$*"
 }
 check() {
   local mask=$1 file=$2 grp=$3
@@ -138,3 +138,33 @@ check_ipfwd(){
         echo "$output"
     fi
 }
+
+
+check 0177 /etc/crontab root
+check 0077 /etc/cron.daily root
+check 0077 /etc/cron.weekly root
+check 0077 /etc/cron.monthly root
+check 0077 /etc/cron.d root
+check 0177 /etc/ssh/sshd_config root
+check 0133 /etc/passwd root
+check 0133 /etc/passwd- root
+check 0133 /etc/group root
+check 0133 /etc/group- root
+check 0137 /etc/shadow either
+check 0137 /etc/shadow- either
+check 0137 /etc/gshadow either
+check 0137 /etc/gshadow- either
+check 0133 /etc/shells root
+check 0177 /etc/security/opasswd root
+
+echo -e "\e[33m--SYSTEM HARDENING--\n\e[0m"
+echo -e "\e[33m--DNS--\e[0m"
+check_service named.service inactive
+echo -e "\e[33m--Auditd--\e[0m"
+check_service auditd active
+echo -e "\e[33m--Chrony--\e[0m"
+check_service chrony active
+echo -e "\e[33m--RSYSLOG--\e[0m"
+check_service rsyslog active
+echo -e "\e[33m--UFW--\e[0m"
+check_ufw
