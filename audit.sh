@@ -125,4 +125,16 @@ check_kernel(){
 }
 check_ipfwd(){
     local output
+    output=$(sysctl net.ipv4.ip_forward)
+    result="OK"
+    
+    echo "$output" | grep -qi "0" || result="FAIL"
+
+    if [[ "$result" = "OK" ]]; then
+        pass "IP forwarding is disabled"
+        echo "$output"
+    else
+        fail "IP forwarding is enabled, please review configuration"
+        echo "$output"
+    fi
 }
