@@ -60,7 +60,7 @@ check_ufw() {
     echo "$output" | grep -qi "^status: active" || result="FAIL"
     echo "$output" | grep -qi "Default:.*deny (incomming" || result="FAIL"
 
-    if [["result" == "OK" ]]; then
+    if [[ "result" == "OK" ]]; then
         pass "UFW is actvie and incomming is denied"
         "$output"
     else 
@@ -81,7 +81,7 @@ check_aa() {
         pass "AppArmor is active and 0 profiles are in complain mode"
     else
         fail "AppArmor is not active/Profiles are in complain mode. Please review"
-        "$output"
+        echo "$output"
     fi
 }
 check_mdatp(){
