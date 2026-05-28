@@ -168,3 +168,5 @@ echo -e "\e[33m--RSYSLOG--\e[0m"
 check_service rsyslog active
 echo -e "\e[33m--UFW--\e[0m"
 check_ufw
+check_mdatp
+check_aa
