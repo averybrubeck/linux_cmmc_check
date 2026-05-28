@@ -26,7 +26,7 @@ check() {
     result="FAIL"; 
   fi
   
-  [["$o" != ""root ]] && result="FAIL"
+  [[ "$o" != ""root ]] && result="FAIL"
 
   if [[ "$grp" == "root" ]]; then
     [[ "$g" != "root" ]] && result="FAIL"
@@ -57,7 +57,7 @@ check_ufw() {
     local result="OK"
     output=$(ufw status verbose 2>/dev/null)
 
-    echo "$output" | grep -qi "^status: active" || result "fail"
+    echo "$output" | grep -qi "^status: active" || result="FAIL"
     echo "$output" | grep -qi "Default:.*deny (incomming" || result="FAIL"
 
     if [["result" == "OK" ]]; then
@@ -65,7 +65,7 @@ check_ufw() {
         "$output"
     else 
         fail "UFW is inactive, or configuration needs to be reviewed"
-        "$output"
+        echo "$output"
     fi
 }
 check_aa() {
