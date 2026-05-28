@@ -3,10 +3,10 @@ pass() {
     printf '\033[32mOK\033[0m %s\n' "$*"
 }
 fail() {
-    printf '\033[31mOK\033[0m %s\n' "$*"
+    printf '\033[31mFAIL\033[0m %s\n' "$*"
 }
 warn() {
-    printf '\033[33mOK\033[0m %s\n' "$*"
+    printf '\033[33mWARN\033[0m %s\n' "$*"
 }
 check() {
   local mask=$1 file=$2 grp=$3
