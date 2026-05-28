@@ -139,7 +139,7 @@ check_ipfwd(){
     fi
 }
 
-
+echo -e "\e[33m--FILE PERMISSIONS--\n\e[0m"
 check 0177 /etc/crontab root
 check 0077 /etc/cron.daily root
 check 0077 /etc/cron.weekly root
@@ -158,15 +158,11 @@ check 0133 /etc/shells root
 check 0177 /etc/security/opasswd root
 
 echo -e "\e[33m--SYSTEM HARDENING--\n\e[0m"
-echo -e "\e[33m--DNS--\e[0m"
+echo -e "\e[33m--SERVICES--\e[0m"
 check_service named.service inactive
-echo -e "\e[33m--Auditd--\e[0m"
 check_service auditd active
-echo -e "\e[33m--Chrony--\e[0m"
 check_service chrony active
-echo -e "\e[33m--RSYSLOG--\e[0m"
 check_service rsyslog active
-echo -e "\e[33m--UFW--\e[0m"
 check_ufw
 check_mdatp
 check_aa
