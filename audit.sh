@@ -20,7 +20,6 @@ check() {
   p=$(stat -c %a "$file")
   o=$(stat -c %U "$file")
   g=$(stat -c %G "$file")
-
   
   if [ $((8#$p & 8#$mask)) -ne 0 ]; then 
     result="FAIL"; 
@@ -138,6 +137,13 @@ check_ipfwd(){
         echo "$output"
     fi
 }
+check_ports() {
+    local bad_ports
+
+    bad_ports=$(ss -H -tln | awk '{ match($0, /:[0-9]+$/, m); port=m[0]; gsub(/:/,"",port); if (port!="3000" && port!="9392" && port!="6379" && port!="5432") print port }' | sort -u)
+
+    [[ -z "$bad_ports" ]] && pass "OK" || fail "BAD: $bad_ports"
+}
 echo -e "\e[33m--SYSTEM HARDENING--\n\e[0m"
 echo -e "\e[33m--FILE PERMISSIONS--\e[0m"
 check 0177 /etc/crontab root
@@ -165,10 +171,17 @@ check_service rsyslog active
 check_ufw
 check_mdatp
 check_aa
+
 echo -e "\e[33m--Kernel Modules--\e[0m"
 check_kernel usb_storage
 check_kernel cramfs
 check_kernel freevxfs
 check_kernel hfs
 check_kernel udf
+check_kernel dccp
+check_kernel sctp
+check_kernel tipc
 check_ipfwd
+
+echo -e "\e[33m--Open Ports--\e[0m"
+check_ports
