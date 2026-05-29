@@ -117,10 +117,27 @@ check_mdatp() {
     fi
 }
 check_ssh() {
-    if command -v sshd >/dev/null 2>&1; then
-        warn "SSH service installed - review sshd_config"
+    local result="OK"
+
+    if ! command -v sshd >/dev/null 2>&1; then
+        pass "SSH service is not installed"
+        return
+    fi
+
+    if ! systemctl is-active ssh >/dev/null 2>&1 && \
+       ! systemctl is-active sshd >/dev/null 2>&1; then
+        pass "SSH service is installed but not active"
+        return
+    fi
+
+    grep -Eq '^PasswordAuthentication\s+no' /etc/ssh/sshd_config || result="FAIL"
+    grep -Eq '^PermitRootLogin\s+no' /etc/ssh/sshd_config || result="FAIL"
+    grep -Eq '^PubkeyAuthentication\s+yes' /etc/ssh/sshd_config || result="FAIL"
+
+    if [[ "$result" == "OK" ]]; then
+        pass "SSHD configuration is hardened"
     else
-        pass "SSH service not installed"
+        fail "SSHD configuration requires review"
     fi
 }
 check_kernel(){ 
