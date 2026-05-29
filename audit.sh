@@ -140,9 +140,13 @@ check_ipfwd(){
 check_ports() {
     local bad_ports
 
-    bad_ports=$(ss -H -tln | awk '{ match($0, /:[0-9]+$/, m); port=m[0]; gsub(/:/,"",port); if (port!="3000" && port!="9392" && port!="6379" && port!="5432") print port }' | sort -u)
+    bad_ports=$(ss -H -tln | awk '{ if (match($0, /:[0-9]+$/)) { port=substr($0,RSTART+1,RLENGTH-1); if (port!="3000" && port!="9392" && port!="6379" && port!="5432") print port } }' | sort -u)
 
-    [[ -z "$bad_ports" ]] && pass "OK" || fail "BAD: $bad_ports"
+    if [[ -z "$bad_ports" ]]; then
+        pass "Only approved listening ports detected"
+    else
+        fail "Unauthorized listening ports detected: $bad_ports"
+    fi
 }
 echo -e "\e[33m--SYSTEM HARDENING--\n\e[0m"
 echo -e "\e[33m--FILE PERMISSIONS--\e[0m"
