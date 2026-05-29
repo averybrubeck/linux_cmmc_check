@@ -1,7 +1,4 @@
-```bash
 #!/bin/bash
-
-set -uo pipefail
 
 PASS_COUNT=0
 FAIL_COUNT=0
@@ -186,11 +183,6 @@ echo "Date: $(date)"
 echo "Kernel: $(uname -r)"
 echo
 
-require_cmd jq
-require_cmd ss
-require_cmd aa-status
-require_cmd ufw
-
 echo -e "\e[33m--SYSTEM HARDENING--\e[0m"
 echo
 
@@ -251,4 +243,4 @@ echo -e "\e[33m--SUMMARY--\e[0m"
 echo -e "\e[32mPASS: $PASS_COUNT\e[0m"
 echo -e "\e[31mFAIL: $FAIL_COUNT\e[0m"
 echo -e "\e[33mWARN: $WARN_COUNT\e[0m"
-```
+
