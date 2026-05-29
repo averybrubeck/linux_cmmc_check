@@ -3,29 +3,24 @@
 PASS_COUNT=0
 FAIL_COUNT=0
 WARN_COUNT=0
-
 pass() {
     ((PASS_COUNT++))
     printf '\033[32mOK\033[0m %s\n' "$*"
 }
-
 fail() {
     ((FAIL_COUNT++))
     printf '\033[31mFAIL\033[0m %s\n' "$*"
 }
-
 warn() {
     ((WARN_COUNT++))
     printf '\033[33mWARN\033[0m %s\n' "$*"
 }
-
 require_cmd() {
     command -v "$1" >/dev/null 2>&1 || {
         fail "$1 is not installed"
         return 1
     }
 }
-
 check() {
     local mask=$1
     local file=$2
@@ -60,7 +55,6 @@ check() {
         fail "$file mode=$p owner=$o group=$g"
     fi
 }
-
 check_service() {
     local svc=$1
     local expected=$2
@@ -74,7 +68,6 @@ check_service() {
         fail "$svc is $actual (expected $expected)"
     fi
 }
-
 check_ufw() {
     local output
     local result="OK"
@@ -91,7 +84,6 @@ check_ufw() {
         echo "$output"
     fi
 }
-
 check_aa() {
     local output
     local result="OK"
@@ -108,7 +100,6 @@ check_aa() {
         echo "$output"
     fi
 }
-
 check_mdatp() {
     local output
     local result="OK"
@@ -125,7 +116,6 @@ check_mdatp() {
         echo "$output" | jq '.definitionsStatus'
     fi
 }
-
 check_ssh() {
     if command -v sshd >/dev/null 2>&1; then
         warn "SSH service installed - review sshd_config"
@@ -133,7 +123,6 @@ check_ssh() {
         pass "SSH service not installed"
     fi
 }
-
 check_kernel(){ 
 local kmd=$1 
 output=$(lsmod | grep -E "$kmd") 
@@ -159,7 +148,6 @@ check_ipfwd() {
         echo "$output"
     fi
 }
-
 check_ports() {
     local bad_ports
 
@@ -182,7 +170,6 @@ echo -e "\e[33m--SYSTEM HARDENING--\e[0m"
 echo
 
 echo -e "\e[33m--FILE PERMISSIONS--\e[0m"
-
 check 0177 /etc/crontab root
 check 0077 /etc/cron.daily root
 check 0077 /etc/cron.weekly root
@@ -202,12 +189,10 @@ check 0177 /etc/security/opasswd root
 
 echo
 echo -e "\e[33m--SERVICES--\e[0m"
-
 check_service named.service inactive
 check_service auditd active
 check_service chrony active
 check_service rsyslog active
-
 check_ufw
 check_mdatp
 check_aa
@@ -215,7 +200,6 @@ check_ssh
 
 echo
 echo -e "\e[33m--KERNEL MODULES--\e[0m"
-
 check_kernel usb_storage
 check_kernel cramfs
 check_kernel freevxfs
@@ -224,18 +208,14 @@ check_kernel udf
 check_kernel dccp
 check_kernel sctp
 check_kernel tipc
-
 check_ipfwd
 
 echo
 echo -e "\e[33m--OPEN PORTS--\e[0m"
-
 check_ports
 
 echo
 echo -e "\e[33m--SUMMARY--\e[0m"
-
 echo -e "\e[32mPASS: $PASS_COUNT\e[0m"
 echo -e "\e[31mFAIL: $FAIL_COUNT\e[0m"
 echo -e "\e[33mWARN: $WARN_COUNT\e[0m"
-
