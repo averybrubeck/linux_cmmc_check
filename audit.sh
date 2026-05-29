@@ -63,7 +63,7 @@ check_service() {
     actual=$(systemctl is-active "$svc" 2>/dev/null)
 
     if [[ "$actual" == "$expected" ]]; then
-        pass "$svc is $actual"
+        pass "$svc is $actual | AU.L2-3.3.1, CM.L2-3.4.6  "
     else
         fail "$svc is $actual (expected $expected)"
     fi
@@ -78,7 +78,7 @@ check_ufw() {
     echo "$output" | grep -qi "Default:.*deny (incoming" || result="FAIL"
 
     if [[ "$result" == "OK" ]]; then
-        pass "UFW is active and incoming traffic is denied by default"
+        pass "UFW is active and incoming traffic is denied by default | AC.L2-3.1.2, SC.L2-3.13.1 "
     else
         fail "UFW configuration requires review"
         echo "$output"
@@ -110,7 +110,7 @@ check_mdatp() {
     echo "$output" | jq -e '.realTimeProtectionEnabled.value == true' >/dev/null 2>&1 || result="FAIL"
 
     if [[ "$result" == "OK" ]]; then
-        pass "Microsoft Defender is active and definitions are up to date"
+        pass "Microsoft Defender is active and definitions are up to date | SI.L2-3.14.2, SI.L2-3.14.6 "
     else
         fail "Microsoft Defender configuration requires review"
         echo "$output" | jq '.definitionsStatus'
@@ -120,13 +120,13 @@ check_ssh() {
     local result="OK"
 
     if ! command -v sshd >/dev/null 2>&1; then
-        pass "SSH service is not installed"
+        pass "SSH service is not installed | AC.L2-3.1.12, SC.L2-3.13.8 "
         return
     fi
 
     if ! systemctl is-active ssh >/dev/null 2>&1 && \
        ! systemctl is-active sshd >/dev/null 2>&1; then
-        pass "SSH service is installed but not active"
+        warn "SSH service is installed but not active"
         return
     fi
 
@@ -135,7 +135,7 @@ check_ssh() {
     grep -Eq '^PubkeyAuthentication\s+yes' /etc/ssh/sshd_config || result="FAIL"
 
     if [[ "$result" == "OK" ]]; then
-        pass "SSHD configuration is hardened"
+        pass "SSHD configuration is hardened | AC.L2-3.1.12"
     else
         fail "SSHD configuration requires review"
     fi
@@ -145,7 +145,7 @@ local kmd=$1
 output=$(lsmod | grep -E "$kmd") 
 
 if [[ "$output" == "" ]]; then 
-    pass "$kmd is disabled" 
+    pass "$kmd is disabled | AC.L2-3.1.2 CM.L2-3.4.6, CM.L2-3.4.7 " 
 else 
     fail "kmd is enabled, please review" echo "$output" 
 fi 
@@ -159,7 +159,7 @@ check_ipfwd() {
     echo "$output" | grep -q "= 0" || result="FAIL"
 
     if [[ "$result" == "OK" ]]; then
-        pass "IP forwarding is disabled"
+        pass "IP forwarding is disabled "
     else
         fail "IP forwarding is enabled"
         echo "$output"
@@ -171,7 +171,7 @@ check_ports() {
     bad_ports=$(ss -H -tln | awk '{ if (match($0, /:[0-9]+$/)) { port=substr($0,RSTART+1,RLENGTH-1); if (port!="3000" && port!="9392" && port!="6379" && port!="5432") print port } }' | sort -u)
 
     if [[ -z "$bad_ports" ]]; then
-        pass "Only approved listening ports detected"
+        pass "Only approved listening ports detected | AC.L2-3.1.2, CM.L2-3.4.6, CM.L2-3.4.7 "
     else
         fail "Unauthorized listening ports detected: $bad_ports"
     fi
@@ -183,10 +183,11 @@ echo "Date: $(date)"
 echo "Kernel: $(uname -r)"
 echo
 
-echo -e "\e[33m--SYSTEM HARDENING--\e[0m"
+echo -e "\e[33m--SYSTEM BASELINE CM.L2-3.4.1--\e[0m"
 echo
 
 echo -e "\e[33m--FILE PERMISSIONS--\e[0m"
+echo -e "\e[33m--CIS Benchmark CM.L2-3.4.1--\e[0m"
 check 0177 /etc/crontab root
 check 0077 /etc/cron.daily root
 check 0077 /etc/cron.weekly root
