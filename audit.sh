@@ -134,21 +134,16 @@ check_ssh() {
     fi
 }
 
-check_kernel() {
-    local kmd=$1
-    local output
+check_kernel(){ 
+local kmd=$1 
+output=$(lsmod | grep -E "$kmd") 
 
-    output=$(modprobe -n -v "$kmd" 2>/dev/null)
-
-    echo "$output" | grep -Eq "install /bin/(true|false)" && {
-        pass "$kmd is disabled"
-        return
-    }
-
-    fail "$kmd is enabled or not properly blacklisted"
-    echo "$output"
+if [[ "$output" == "" ]]; then 
+    pass "$kmd is disabled" 
+else 
+    fail "kmd is enabled, please review" echo "$output" 
+fi 
 }
-
 check_ipfwd() {
     local output
     local result="OK"
