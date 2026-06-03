@@ -151,18 +151,39 @@ else
 fi 
 }
 check_ipfwd() {
-    local output
-    local result="OK"
+    local val num
 
-    output=$(sysctl net.ipv4.ip_forward 2>/dev/null)
-
-    echo "$output" | grep -q "= 0" || result="FAIL"
-
-    if [[ "$result" == "OK" ]]; then
-        pass "IP forwarding is disabled "
+    # Prefer numeric output; fall back to /proc if sysctl not available
+    if command -v sysctl >/dev/null 2>&1; then
+        val=$(sysctl -n net.ipv4.ip_forward 2>/dev/null)
     else
-        fail "IP forwarding is enabled"
-        echo "$output"
+        val=$(cat /proc/sys/net/ipv4/ip_forward 2>/dev/null)
+    fi
+
+    # normalize whitespace and strip CR
+    val=$(echo "$val" | tr -d '\r' | xargs 2>/dev/null)
+
+    if [[ -z "$val" ]]; then
+        warn "Could not determine net.ipv4.ip_forward value"
+        return
+    fi
+
+    # extract first numeric token if present
+    num=$(echo "$val" | grep -oE '[0-9]+' | head -n1 || true)
+    if [[ -z "$num" ]]; then
+        # fallback to patterns like 'net.ipv4.ip_forward = 0'
+        if echo "$val" | grep -qE '= *0\b'; then
+            pass "IP forwarding is disabled"
+            return
+        fi
+        warn "Unrecognized net.ipv4.ip_forward output: $val"
+        return
+    fi
+
+    if (( num == 0 )); then
+        pass "IP forwarding is disabled"
+    else
+        fail "IP forwarding is enabled (value=$num, raw='$val')"
     fi
 }
 check_ports() {
