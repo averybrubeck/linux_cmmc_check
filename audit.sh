@@ -111,6 +111,7 @@ check_mdatp() {
 
     if [[ "$result" == "OK" ]]; then
         pass "Microsoft Defender is active and definitions are up to date | SI.L2-3.14.2, SI.L2-3.14.6 "
+        echo "Microsoft Defender Status $output" >> BaselineResults.txt
     else
         fail "Microsoft Defender configuration requires review"
         echo "$output" | jq '.definitionsStatus'
@@ -259,7 +260,7 @@ echo -e "\e[32mPASS: $PASS_COUNT\e[0m"
 echo -e "\e[31mFAIL: $FAIL_COUNT\e[0m"
 echo -e "\e[33mWARN: $WARN_COUNT\e[0m"
 
-echo "$PASS_COUNT" >> BaselineResults.txt
-echo "$WARN_COUNT" >> BaselineResults.txt
-echo "$FAIL_COUNT" >> BaselineResults.txt
+echo "Pass Count $PASS_COUNT" >> BaselineResults.txt
+echo "Warn Count $WARN_COUNT" >> BaselineResults.txt
+echo "Fail Count $FAIL_COUNT" >> BaselineResults.txt
 
