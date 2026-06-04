@@ -93,7 +93,7 @@ check_ufw() {
 
     if [[ "$result" == "OK" ]]; then
         pass "UFW is active and incoming traffic is denied by default | AC.L2-3.1.2, SC.L2-3.13.1 "
-        echo "$output" >> "$results_file\n"
+        echo "$output" >> "$results_file"
     else
         fail "UFW configuration requires review"
         echo "$output"
@@ -232,7 +232,7 @@ echo
 
 echo -e "\e[33m--FILE PERMISSIONS--\e[0m"
 echo -e "\e[33m--CIS Benchmark CM.L2-3.4.1--\e[0m"
-check 0177 /etc/crontab root | echo check 0177 /etc/crontab root >> BaselineResults.txt
+check 0177 /etc/crontab root
 check 0077 /etc/cron.daily root
 check 0077 /etc/cron.weekly root
 check 0077 /etc/cron.monthly root
