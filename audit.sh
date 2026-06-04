@@ -29,8 +29,8 @@ check_results_file() {
         touch "$results_file"
         echo "Hostname: $(hostname)" >> "$results_file"
         echo "Date: $(date)" >> "$results_file"
-        echo "Kernel: $(uname -r)\n" >> "$results_file"
-        echo 
+        echo "Kernel: $(uname -r)" >> "$results_file"
+        echo "/n" >> "$results_file"
     fi
 }
 check() {
