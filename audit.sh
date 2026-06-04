@@ -215,10 +215,10 @@ check_ports() {
 }
 check_results_file
 echo
-echo "Hostname: $(hostname)"
-echo "Date: $(date)"
-echo "Kernel: $(uname -r)"
-echo
+echo "Hostname: $(hostname)" >> "$results_file"
+echo "Date: $(date)" >> "$results_file"
+echo "Kernel: $(uname -r)" >> "$results_file"
+echo 
 
 echo -e "\e[33m--SYSTEM BASELINE CM.L2-3.4.1--\e[0m"
 echo
