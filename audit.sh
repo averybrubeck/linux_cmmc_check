@@ -3,6 +3,7 @@
 PASS_COUNT=0
 FAIL_COUNT=0
 WARN_COUNT=0
+results_file="baseline-results.txt"
 pass() {
     ((PASS_COUNT++))
     printf '\033[32mOK\033[0m %s\n' "$*"
@@ -20,6 +21,13 @@ require_cmd() {
         fail "$1 is not installed"
         return 1
     }
+}
+check_results_file() {
+    if [[ -e "$results_file" ]]; then
+        rm -f "$results_file"
+    else
+        touch "$results_file"
+    fi
 }
 check() {
     local mask=$1
@@ -51,6 +59,7 @@ check() {
 
     if [[ "$result" == "OK" ]]; then
         pass "$file mode=$p owner=$o group=$g"
+        echo "$result" >> "$results_file"
     else
         fail "$file mode=$p owner=$o group=$g"
     fi
@@ -64,6 +73,7 @@ check_service() {
 
     if [[ "$actual" == "$expected" ]]; then
         pass "$svc is $actual | AU.L2-3.3.1, CM.L2-3.4.6  "
+        echo "$svc is $autual" >> "$results_file"
     else
         fail "$svc is $actual (expected $expected)"
     fi
