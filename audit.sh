@@ -258,3 +258,8 @@ echo -e "\e[33m--SUMMARY--\e[0m"
 echo -e "\e[32mPASS: $PASS_COUNT\e[0m"
 echo -e "\e[31mFAIL: $FAIL_COUNT\e[0m"
 echo -e "\e[33mWARN: $WARN_COUNT\e[0m"
+
+echo "$PASS_COUNT" >> BaselineResults.txt
+echo "$WARN_COUNT" >> BaselineResults.txt
+echo "$FAIL_COUNT" >> BaselineResults.txt
+
