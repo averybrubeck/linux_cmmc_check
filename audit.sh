@@ -30,7 +30,6 @@ check_results_file() {
         echo "Hostname: $(hostname)" >> "$results_file"
         echo "Date: $(date)" >> "$results_file"
         echo "Kernel: $(uname -r)" >> "$results_file"
-        echo "/n" >> "$results_file"
     fi
 }
 check() {
@@ -221,11 +220,6 @@ check_ports() {
     fi
 }
 check_results_file
-echo
-echo "Hostname: $(hostname)" >> "$results_file"
-echo "Date: $(date)" >> "$results_file"
-echo "Kernel: $(uname -r)" >> "$results_file"
-echo 
 
 echo -e "\e[33m--SYSTEM BASELINE CM.L2-3.4.1--\e[0m"
 echo
