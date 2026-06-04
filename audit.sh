@@ -127,7 +127,8 @@ check_mdatp() {
 
     if [[ "$result" == "OK" ]]; then
         pass "Microsoft Defender is active and definitions are up to date | SI.L2-3.14.2, SI.L2-3.14.6 "
-        echo "$output" | jq -e '.definitionsStatus["$type"]' >> "$results_file"
+        echo "Definition Status: $output" | jq -e '.definitionsStatus["$type"]' >> "$results_file"
+        echo "RealTimeProtectionEnabled $output" | jq -e '.realTimeProtectionEnabled.value == true' >> "$results_file"
     else
         fail "Microsoft Defender configuration requires review"
         echo "$output" | jq '.definitionsStatus'
@@ -138,12 +139,14 @@ check_ssh() {
 
     if ! command -v sshd >/dev/null 2>&1; then
         pass "SSH service is not installed | AC.L2-3.1.12, SC.L2-3.13.8 "
+        echo "SSH service is not installed" >> "$results_file"
         return
     fi
 
     if ! systemctl is-active ssh >/dev/null 2>&1 && \
        ! systemctl is-active sshd >/dev/null 2>&1; then
         warn "SSH service is installed but not active"
+        echo "\033[33mWARNING:\033[0m SSH service is installed but not active" >> "$results_file"
         return
     fi
 
@@ -163,6 +166,7 @@ output=$(lsmod | grep -E "$kmd")
 
 if [[ "$output" == "" ]]; then 
     pass "$kmd is disabled | AC.L2-3.1.2 CM.L2-3.4.6, CM.L2-3.4.7 " 
+    echo "$kmd is disabled" >> "$results_file"
 else 
     fail "kmd is enabled, please review" echo "$output" 
 fi 
@@ -199,6 +203,7 @@ check_ipfwd() {
 
     if (( num == 0 )); then
         pass "IP forwarding is disabled"
+        echo "IP Forwarding is disabled" >> "$results_file"
     else
         fail "IP forwarding is enabled (value=$num, raw='$val')"
     fi
@@ -210,6 +215,7 @@ check_ports() {
 
     if [[ -z "$bad_ports" ]]; then
         pass "Only approved listening ports detected | AC.L2-3.1.2, CM.L2-3.4.6, CM.L2-3.4.7 "
+        echo "Only approved listening ports detected" >> "$results_file"
     else
         fail "Unauthorized listening ports detected: $bad_ports"
     fi
