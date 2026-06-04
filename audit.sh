@@ -27,10 +27,12 @@ check_results_file() {
         rm -f "$results_file"
     else
         touch "$results_file"
+    fi
+}
+add_date_time(){
         echo "Hostname: $(hostname)" >> "$results_file"
         echo "Date: $(date)" >> "$results_file"
         echo "Kernel: $(uname -r)" >> "$results_file"
-    fi
 }
 check() {
     local mask=$1
@@ -220,6 +222,7 @@ check_ports() {
     fi
 }
 check_results_file
+add_date_time
 
 echo -e "\e[33m--SYSTEM BASELINE CM.L2-3.4.1--\e[0m"
 echo
