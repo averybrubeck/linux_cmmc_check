@@ -77,7 +77,7 @@ check_service() {
 
     if [[ "$actual" == "$expected" ]]; then
         pass "$svc is $actual | AU.L2-3.3.1, CM.L2-3.4.6  "
-        echo "$svc is $actual" >> "$results_file\n"
+        echo "$svc is $actual" >> "$results_file"
     else
         fail "$svc is $actual (expected $expected)"
     fi
