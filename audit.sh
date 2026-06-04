@@ -111,7 +111,6 @@ check_mdatp() {
 
     if [[ "$result" == "OK" ]]; then
         pass "Microsoft Defender is active and definitions are up to date | SI.L2-3.14.2, SI.L2-3.14.6 "
-        echo "Microsoft Defender Status $output" >> BaselineResults.txt
     else
         fail "Microsoft Defender configuration requires review"
         echo "$output" | jq '.definitionsStatus'
@@ -210,7 +209,7 @@ echo
 
 echo -e "\e[33m--FILE PERMISSIONS--\e[0m"
 echo -e "\e[33m--CIS Benchmark CM.L2-3.4.1--\e[0m"
-check 0177 /etc/crontab root
+check 0177 /etc/crontab root | echo check 0177 /etc/crontab root >> BaselineResults.txt
 check 0077 /etc/cron.daily root
 check 0077 /etc/cron.weekly root
 check 0077 /etc/cron.monthly root
