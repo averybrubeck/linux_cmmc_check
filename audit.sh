@@ -27,7 +27,7 @@ check() {
     local grp=$3
 
     if [[ ! -e "$file" ]]; then
-        fail "$file does not exist"
+        warn "$file does not exist"
         return
     fi
 
