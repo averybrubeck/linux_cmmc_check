@@ -27,6 +27,9 @@ check_results_file() {
         rm -f "$results_file"
     else
         touch "$results_file"
+        echo "Hostname: $(hostname)" >> "$results_file"
+        echo "Date: $(date)" >> "$results_file"
+        echo "Kernel: $(uname -r)" >> "$results_file"
     fi
 }
 check() {
@@ -73,7 +76,7 @@ check_service() {
 
     if [[ "$actual" == "$expected" ]]; then
         pass "$svc is $actual | AU.L2-3.3.1, CM.L2-3.4.6  "
-        echo "$svc is $autual" >> "$results_file"
+        echo "$svc is $actual" >> "$results_file"
     else
         fail "$svc is $actual (expected $expected)"
     fi
@@ -89,6 +92,7 @@ check_ufw() {
 
     if [[ "$result" == "OK" ]]; then
         pass "UFW is active and incoming traffic is denied by default | AC.L2-3.1.2, SC.L2-3.13.1 "
+        echo "$output" >> "$results_file"
     else
         fail "UFW configuration requires review"
         echo "$output"
@@ -105,6 +109,7 @@ check_aa() {
 
     if [[ "$result" == "OK" ]]; then
         pass "AppArmor is active and no profiles are in complain mode"
+        echo "$output" >> "$results_file"
     else
         fail "AppArmor configuration requires review"
         echo "$output"
@@ -121,6 +126,7 @@ check_mdatp() {
 
     if [[ "$result" == "OK" ]]; then
         pass "Microsoft Defender is active and definitions are up to date | SI.L2-3.14.2, SI.L2-3.14.6 "
+          echo "$output" | jq -e '.definitionsStatus["$type"] == "upToDate"' >> "$results_file"
     else
         fail "Microsoft Defender configuration requires review"
         echo "$output" | jq '.definitionsStatus'
