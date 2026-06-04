@@ -207,7 +207,7 @@ check_ports() {
         fail "Unauthorized listening ports detected: $bad_ports"
     fi
 }
-
+check_results_file
 echo
 echo "Hostname: $(hostname)"
 echo "Date: $(date)"
