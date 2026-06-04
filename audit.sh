@@ -59,7 +59,7 @@ check() {
 
     if [[ "$result" == "OK" ]]; then
         pass "$file mode=$p owner=$o group=$g"
-        echo "$result" >> "$results_file"
+        echo "$result $file mode=$p owner=$o group=$g" >> "$results_file"
     else
         fail "$file mode=$p owner=$o group=$g"
     fi
