@@ -304,7 +304,8 @@ check_ipfwd
 
 echo
 echo -e "\e[33m--OPEN PORTS--\e[0m"
-check_ports
+SYSTEM_ROLE="${1:-probe}"
+check_ports "$SYSTEM_ROLE"
 
 echo
 echo -e "\e[33m--SUMMARY--\e[0m"
