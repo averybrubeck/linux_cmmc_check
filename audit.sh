@@ -119,44 +119,23 @@ check_aa() {
 }
 check_mdatp() {
     local output
-    local definitions_status
-    local rtp_enabled
     local result="OK"
-
-    if ! command -v mdatp >/dev/null 2>&1; then
-        warn "Microsoft Defender is not installed"
-        echo "Microsoft Defender is not installed" >> "$results_file"
-        return
-    fi
-
-    if ! command -v jq >/dev/null 2>&1; then
-        warn "jq is not installed; skipping detailed Microsoft Defender JSON checks"
-        echo "jq is not installed; Microsoft Defender JSON checks skipped" >> "$results_file"
-        return
-    fi
 
     output=$(mdatp health --output json 2>/dev/null)
 
-    if ! echo "$output" | jq empty >/dev/null 2>&1; then
-        fail "Microsoft Defender health output is not valid JSON"
-        echo "$output"
-        return
-    fi
-
-    definitions_status=$(echo "$output" | jq -r '.definitionsStatus // .definitions_status // empty')
-    rtp_enabled=$(echo "$output" | jq -r '.realTimeProtectionEnabled // .real_time_protection_enabled // empty')
-
-    [[ "$definitions_status" == "upToDate" || "$definitions_status" == "up_to_date" ]] || result="FAIL"
-    [[ "$rtp_enabled" == "true" ]] || result="FAIL"
+    echo "$output" | jq -e '.definitionsStatus["$type"] == "upToDate"' >/dev/null 2>&1 || result="FAIL"
+    echo "$output" | jq -e '.realTimeProtectionEnabled.value == true' >/dev/null 2>&1 || result="FAIL"
 
     if [[ "$result" == "OK" ]]; then
-        pass "Microsoft Defender is active and definitions are up to date | SI.L2-3.14.2, SI.L2-3.14.6"
-        echo "Microsoft Defender definitions status: $definitions_status" >> "$results_file"
-        echo "Microsoft Defender real-time protection enabled: $rtp_enabled" >> "$results_file"
+        pass "Microsoft Defender is active and definitions are up to date | SI.L2-3.14.2, SI.L2-3.14.6 "
+
+        echo "Definition Status: $(echo "$output" | jq -r '.definitionsStatus["$type"]')" >> "$results_file"
+        echo "RealTimeProtectionEnabled: $(echo "$output" | jq -r '.realTimeProtectionEnabled.value')" >> "$results_file"
+
     else
         fail "Microsoft Defender configuration requires review"
-        echo "Microsoft Defender definitions status: $definitions_status" >> "$results_file"
-        echo "Microsoft Defender real-time protection enabled: $rtp_enabled" >> "$results_file"
+        echo "$output" | jq '.definitionsStatus'
+        echo "$output" | jq '.realTimeProtectionEnabled'
     fi
 }
 check_ssh() {
