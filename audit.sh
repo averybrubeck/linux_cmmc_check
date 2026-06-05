@@ -220,13 +220,13 @@ check_ports() {
 
     case "$role" in
         probe)
-            # Approved OpenVAS probe ports
-            allowed_ports="3000 9392 6379 5432"
+            # Approved probe ports
+            allowed_ports="3000 9392 6379 5432 514 22"
             ;;
 
         gitlab)
             # Approved GitLab VM ports
-            allowed_ports="22 80 443 3000 6379 5432"
+            allowed_ports="22 80 443"
             ;;
 
         syslog)
