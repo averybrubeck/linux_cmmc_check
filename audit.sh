@@ -216,6 +216,7 @@ check_ports() {
     local role="${1:-probe}"
     local allowed_ports
     local bad_ports
+    local loopback_ports
 
     case "$role" in
         probe)
@@ -270,12 +271,34 @@ check_ports() {
         }
     ' | sort -u)
 
+    loopback_ports=$(ss -H -tln | awk '
+        {
+            local_addr = $4
+
+            addr = local_addr
+            sub(/:[0-9]+$/, "", addr)
+            gsub(/^\[/, "", addr)
+            gsub(/\]$/, "", addr)
+            sub(/%.*/, "", addr)
+
+            if (addr ~ /^127\./ || addr == "::1" || addr ~ /^::ffff:127\./) {
+                print local_addr
+            }
+        }
+    ' | sort -u)
+
     if [[ -z "$bad_ports" ]]; then
         pass "Only approved externally listening ports detected for role: $role | AC.L2-3.1.2, CM.L2-3.4.6, CM.L2-3.4.7"
         echo "Only approved externally listening ports detected for role: $role" >> "$results_file"
     else
         fail "Unauthorized externally listening ports detected for role $role: $bad_ports"
         echo "Unauthorized externally listening ports detected for role $role: $bad_ports" >> "$results_file"
+    fi
+
+    if [[ -n "$loopback_ports" ]]; then
+        warn "Loopback-only listening ports detected; review for awareness only"
+        echo "Loopback-only listening ports detected; review for awareness only:" >> "$results_file"
+        echo "$loopback_ports" >> "$results_file"
     fi
 }
 check_results_file
