@@ -219,17 +219,18 @@ check_ports() {
 
     case "$role" in
         probe)
-            # OpenVAS probe approved ports
-            allowed_ports="9392 3000 6379 5432"
+            # Approved OpenVAS probe ports
+            allowed_ports="3000 9392 6379 5432"
             ;;
 
         gitlab)
-            # GitLab approved ports
-            # 22  = SSH / Git over SSH
-            # 80  = HTTP / redirect or cert validation if used
-            # 443 = HTTPS
-            # 3000, 6379, 5432 = GitLab/internal application ports if approved for this build
-            allowed_ports="22 80 443"
+            # Approved GitLab VM ports
+            allowed_ports="22 80 443 3000 6379 5432"
+            ;;
+
+        syslog)
+            # Approved syslog VM ports
+            allowed_ports="22 514 6514"
             ;;
 
         *)
@@ -237,24 +238,45 @@ check_ports() {
             return
             ;;
     esac
+
     bad_ports=$(ss -H -tln | awk -v allowed="$allowed_ports" '
         BEGIN {
             split(allowed, a, " ")
             for (i in a) ok[a[i]] = 1
         }
+
+        function is_loopback(addr) {
+            return (
+                addr ~ /^127\./ ||
+                addr == "::1" ||
+                addr ~ /^::ffff:127\./
+            )
+        }
+
         {
-            if (match($0, /:[0-9]+$/)) {
-                port = substr($0, RSTART + 1, RLENGTH - 1)
-                if (!(port in ok)) print port
+            local_addr = $4
+
+            port = local_addr
+            sub(/^.*:/, "", port)
+
+            addr = local_addr
+            sub(/:[0-9]+$/, "", addr)
+            gsub(/^\[/, "", addr)
+            gsub(/\]$/, "", addr)
+            sub(/%.*/, "", addr)
+
+            if (!(port in ok) && !is_loopback(addr)) {
+                print local_addr
             }
         }
     ' | sort -u)
 
     if [[ -z "$bad_ports" ]]; then
-        pass "Only approved listening ports detected for role: $role | AC.L2-3.1.2, CM.L2-3.4.6, CM.L2-3.4.7"
-        echo "Only approved listening ports detected for role: $role" >> "$results_file"
+        pass "Only approved externally listening ports detected for role: $role | AC.L2-3.1.2, CM.L2-3.4.6, CM.L2-3.4.7"
+        echo "Only approved externally listening ports detected for role: $role" >> "$results_file"
     else
-        fail "Unauthorized listening ports detected for role $role: $bad_ports"
+        fail "Unauthorized externally listening ports detected for role $role: $bad_ports"
+        echo "Unauthorized externally listening ports detected for role $role: $bad_ports" >> "$results_file"
     fi
 }
 check_results_file
