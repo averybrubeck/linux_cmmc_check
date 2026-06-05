@@ -246,11 +246,10 @@ check_ports() {
         }
 
         function is_loopback(addr) {
-            return (
-                addr ~ /^127\./ ||
-                addr == "::1" ||
-                addr ~ /^::ffff:127\./
-            )
+            if (addr ~ /^127\./) return 1
+            if (addr == "::1") return 1
+            if (addr ~ /^::ffff:127\./) return 1
+            return 0
         }
 
         {
