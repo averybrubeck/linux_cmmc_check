@@ -210,15 +210,48 @@ check_ipfwd() {
     fi
 }
 check_ports() {
+    local role="${1:-probe}"
+    local allowed_ports
     local bad_ports
 
-    bad_ports=$(ss -H -tln | awk '{ if (match($0, /:[0-9]+$/)) { port=substr($0,RSTART+1,RLENGTH-1); if (port!="3000" && port!="9392" && port!="6379" && port!="5432") print port } }' | sort -u)
+    case "$role" in
+        probe)
+            # OpenVAS probe approved ports
+            allowed_ports="9392 3000 6379 5432"
+            ;;
+
+        gitlab)
+            # GitLab approved ports
+            # 22  = SSH / Git over SSH
+            # 80  = HTTP / redirect or cert validation if used
+            # 443 = HTTPS
+            # 3000, 6379, 5432 = GitLab/internal application ports if approved for this build
+            allowed_ports="22 80 443"
+            ;;
+
+        *)
+            fail "Unknown system role: $role"
+            return
+            ;;
+    esac
+    bad_ports=$(ss -H -tln | awk -v allowed="$allowed_ports" '
+        BEGIN {
+            split(allowed, a, " ")
+            for (i in a) ok[a[i]] = 1
+        }
+        {
+            if (match($0, /:[0-9]+$/)) {
+                port = substr($0, RSTART + 1, RLENGTH - 1)
+                if (!(port in ok)) print port
+            }
+        }
+    ' | sort -u)
 
     if [[ -z "$bad_ports" ]]; then
-        pass "Only approved listening ports detected | AC.L2-3.1.2, CM.L2-3.4.6, CM.L2-3.4.7 "
-        echo "Only approved listening ports detected" >> "$results_file"
+        pass "Only approved listening ports detected for role: $role | AC.L2-3.1.2, CM.L2-3.4.6, CM.L2-3.4.7"
+        echo "Only approved listening ports detected for role: $role" >> "$results_file"
     else
-        fail "Unauthorized listening ports detected: $bad_ports"
+        fail "Unauthorized listening ports detected for role $role: $bad_ports"
     fi
 }
 check_results_file
