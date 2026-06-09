@@ -526,6 +526,7 @@ check 0137 /etc/shadow either
 check 0137 /etc/shadow- either
 check 0137 /etc/gshadow either
 check 0137 /etc/gshadow- either
+check 0133 /etc/at.allow root
 check 0133 /etc/shells root
 check 0133 /etc/motd root
 check 0133 /etc/issue root
@@ -580,13 +581,25 @@ check_package ypserv "NIS Server Services"
 check_package cups "CUPS Printing"
 check_package rpcbind "rpcbind services"
 check_package samba "Samba services"
+check_package telnet "Telnet service"
 check_package telnetd "Telnet service"
+check_package inetutils-telnet "Telnet service"
 check_package tftpd-hpa "tftp services"
 check_package squid "Squid web proxy"
 check_package xserver-common "X Window Server"
+check_package nis "nis client"
+check_package rsh "rsh client"
+check_package talk "talk client"
+check_package bluez "Bluetooth client"
 
 echo
 echo -e "\e[33m--KERNEL MODULES--\e[0m"
+check_kernel atm
+check_kernel can
+check_kernel dccp
+check_kernel rds
+check_kernel sctp
+check_kernel tipc
 check_kernel cramfs
 check_kernel freevxfs
 check_kernel hfs
@@ -595,9 +608,6 @@ check_kernel jffs2
 check_kernel overlay
 check_kernel squashfs
 check_kernel udf
-check_kernel dccp
-check_kernel sctp
-check_kernel tipc
 check_ipfwd
 check_kernel usb_storage
 
