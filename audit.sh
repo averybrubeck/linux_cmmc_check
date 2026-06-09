@@ -356,6 +356,8 @@ check_sysctl_value "fs.protected_symlinks" "1"
 check_sysctl_value "kernel.yama.ptrace_scope" "1"
 check_sysctl_value "fs.suid_dumpable" "0"
 check_sysctl_value "kernel.dmesg_restrict" "1"
+check_sysctl_value "kernel.randomize_va_space" "2"
+check_sysctl_value "kernel.kptr_restrict" "2"
 
 echo
 echo -e "\e[33m--SERVICES--\e[0m"
