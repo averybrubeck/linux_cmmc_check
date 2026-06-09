@@ -339,15 +339,19 @@ check_ssh
 
 echo
 echo -e "\e[33m--KERNEL MODULES--\e[0m"
-check_kernel usb_storage
 check_kernel cramfs
 check_kernel freevxfs
 check_kernel hfs
+check_kernel hfsplus
+check_kernel jffs2
+check_kernel overlay
+check_kernel squashfs
 check_kernel udf
 check_kernel dccp
 check_kernel sctp
 check_kernel tipc
 check_ipfwd
+check_kernel usb_storage
 
 echo
 echo -e "\e[33m--OPEN PORTS--\e[0m"
