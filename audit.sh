@@ -554,7 +554,7 @@ echo -e "\e[33m--SERVICES--\e[0m"
 check_service named.service inactive
 check_service apport.service inactive
 check_service autofs inactive
-check_service
+check_service nfs-server.service inactive
 check_service auditd active
 check_service chrony active
 check_service rsyslog active
@@ -568,6 +568,15 @@ echo -e "\e[33m--PACKAGES--\e[0m"
 check_package prelink "Prelink"
 check_package avahi-daemon.sock "avhu daemon"
 check_package apache2 "Apache"
+check_package ngix "Ngix"
+check_package bind9 "DNS Service"
+check_package vsftpd "FTP Package"
+check_package dnsmasq "dnsmasq"
+check_package slapd "LDAP Services"
+check_package dovecot-imapd "Server Message Systems"
+check_package dovecot-pop3d "Server Message Systems"
+check_package ypserv "NIS Server Services"
+check_package cups "CUPS Printing"
 
 echo
 echo -e "\e[33m--KERNEL MODULES--\e[0m"
