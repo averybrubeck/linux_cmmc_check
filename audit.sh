@@ -22,12 +22,21 @@ require_cmd() {
         return 1
     }
 }
-get_coredump_setting () {
+get_coredump_setting_lines () {
     local key="$1"
 
     if command -v systemd-analyze >/dev/null 2>&1; then
         systemd-analyze cat-config systemd/coredump.conf 2>/dev/null | awk -v key="$key" '
-            BEGIN { in_section=0; value="" }
+            BEGIN {
+                in_section=0
+                current_file="unknown"
+            }
+
+            /^# \/.*coredump.*\.conf/ {
+                current_file=$0
+                sub(/^# /, "", current_file)
+                next
+            }
 
             /^[[:space:]]*#/ { next }
             /^[[:space:]]*$/ { next }
@@ -44,15 +53,18 @@ get_coredump_setting () {
                 sub(/^[[:space:]]*/, "", line)
 
                 if (line ~ "^" key "[[:space:]]*=") {
-                    sub("^" key "[[:space:]]*=[[:space:]]*", "", line)
-                    sub(/[[:space:]]*#.*/, "", line)
-                    sub(/[[:space:]]*;.*/, "", line)
-                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
-                    value=line
+                    clean=line
+                    sub(/[[:space:]]*#.*/, "", clean)
+                    sub(/[[:space:]]*;.*/, "", clean)
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", clean)
+
+                    value=clean
+                    sub("^" key "[[:space:]]*=[[:space:]]*", "", value)
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+
+                    print value "|" current_file "|" clean
                 }
             }
-
-            END { print value }
         '
         return
     fi
@@ -64,7 +76,7 @@ get_coredump_setting () {
     fi
 
     awk -v key="$key" '
-        BEGIN { in_section=0; value="" }
+        BEGIN { in_section=0 }
 
         /^[[:space:]]*#/ { next }
         /^[[:space:]]*$/ { next }
@@ -81,16 +93,64 @@ get_coredump_setting () {
             sub(/^[[:space:]]*/, "", line)
 
             if (line ~ "^" key "[[:space:]]*=") {
-                sub("^" key "[[:space:]]*=[[:space:]]*", "", line)
-                sub(/[[:space:]]*#.*/, "", line)
-                sub(/[[:space:]]*;.*/, "", line)
-                gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
-                value=line
+                clean=line
+                sub(/[[:space:]]*#.*/, "", clean)
+                sub(/[[:space:]]*;.*/, "", clean)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", clean)
+
+                value=clean
+                sub("^" key "[[:space:]]*=[[:space:]]*", "", value)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+
+                print value "|" FILENAME "|" clean
             }
         }
-
-        END { print value }
     ' "${files[@]}" 2>/dev/null
+}
+
+check_coredump_setting () {
+    local key="$1"
+    local expected="$2"
+    local lines
+    local effective_line
+    local effective_value
+    local effective_file
+    local bad_extra_lines
+    local failed=0
+
+    lines=$(get_coredump_setting_lines "$key")
+
+    if [[ -z "$lines" ]]; then
+        fail "systemd-coredump $key is not hardened: expected=$expected actual=not configured"
+        echo "systemd-coredump $key is not hardened: expected=$expected actual=not configured" >> "$results_file"
+        return 1
+    fi
+
+    effective_line=$(printf '%s\n' "$lines" | head -n 1)
+    effective_value=$(printf '%s\n' "$effective_line" | cut -d'|' -f1)
+    effective_file=$(printf '%s\n' "$effective_line" | cut -d'|' -f2)
+
+    if [[ "$effective_value" == "$expected" ]]; then
+        pass "systemd-coredump $key is hardened: expected=$expected actual=$effective_value"
+        echo "systemd-coredump $key is hardened: expected=$expected actual=$effective_value from $effective_file" >> "$results_file"
+    else
+        fail "systemd-coredump $key is not hardened: expected=$expected actual=$effective_value"
+        echo "systemd-coredump $key is not hardened: expected=$expected actual=$effective_value from $effective_file" >> "$results_file"
+        failed=1
+    fi
+
+    bad_extra_lines=$(printf '%s\n' "$lines" | tail -n +2 | awk -F'|' -v expected="$expected" '$1 != expected { print $2 ": " $3 }')
+
+    if [[ -n "$bad_extra_lines" ]]; then
+        warn "Additional incorrect systemd-coredump $key values found; effective value may still be correct, but old values should be fixed or commented out"
+        printf '%s\n' "$bad_extra_lines"
+        {
+            echo "Additional incorrect systemd-coredump $key values found:"
+            printf '%s\n' "$bad_extra_lines"
+        } >> "$results_file"
+    fi
+
+    return "$failed"
 }
 check_results_file() {
     if [[ -e "$results_file" ]]; then
@@ -106,8 +166,6 @@ add_date_time(){
 }
 check_core_limits () {
     local bad_lines
-    local process_size_max
-    local storage
     local failed=0
     local limit_files=(/etc/security/limits.conf)
 
@@ -141,27 +199,14 @@ check_core_limits () {
         echo "Core file size is hardened: no core limits greater than 0 found" >> "$results_file"
     fi
 
-    process_size_max=$(get_coredump_setting "ProcessSizeMax")
-
-    if [[ "$process_size_max" == "0" ]]; then
-        pass "systemd-coredump ProcessSizeMax is hardened: expected=0 actual=$process_size_max"
-        echo "systemd-coredump ProcessSizeMax is hardened: expected=0 actual=$process_size_max" >> "$results_file"
-    else
-        fail "systemd-coredump ProcessSizeMax is not hardened: expected=0 actual=${process_size_max:-not configured}"
-        echo "systemd-coredump ProcessSizeMax is not hardened: expected=0 actual=${process_size_max:-not configured}" >> "$results_file"
-        failed=1
+    if ! dpkg-query -W -f='${Status}' systemd-coredump 2>/dev/null | grep -q "install ok installed"; then
+        pass "systemd-coredump package is not installed; Storage and ProcessSizeMax checks are not required"
+        echo "systemd-coredump package is not installed; Storage and ProcessSizeMax checks are not required" >> "$results_file"
+        return "$failed"
     fi
 
-    storage=$(get_coredump_setting "Storage")
-
-    if [[ "$storage" == "none" ]]; then
-        pass "systemd-coredump Storage is hardened: expected=none actual=$storage"
-        echo "systemd-coredump Storage is hardened: expected=none actual=$storage" >> "$results_file"
-    else
-        fail "systemd-coredump Storage is not hardened: expected=none actual=${storage:-not configured}"
-        echo "systemd-coredump Storage is not hardened: expected=none actual=${storage:-not configured}" >> "$results_file"
-        failed=1
-    fi
+    check_coredump_setting "ProcessSizeMax" "0" || failed=1
+    check_coredump_setting "Storage" "none" || failed=1
 
     return "$failed"
 }
