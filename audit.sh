@@ -22,6 +22,76 @@ require_cmd() {
         return 1
     }
 }
+get_coredump_setting () {
+    local key="$1"
+
+    if command -v systemd-analyze >/dev/null 2>&1; then
+        systemd-analyze cat-config systemd/coredump.conf 2>/dev/null | awk -v key="$key" '
+            BEGIN { in_section=0; value="" }
+
+            /^[[:space:]]*#/ { next }
+            /^[[:space:]]*$/ { next }
+
+            /^[[:space:]]*\[/ {
+                section=tolower($0)
+                gsub(/[[:space:]]/, "", section)
+                in_section=(section == "[coredump]")
+                next
+            }
+
+            in_section {
+                line=$0
+                sub(/^[[:space:]]*/, "", line)
+
+                if (line ~ "^" key "[[:space:]]*=") {
+                    sub("^" key "[[:space:]]*=[[:space:]]*", "", line)
+                    sub(/[[:space:]]*#.*/, "", line)
+                    sub(/[[:space:]]*;.*/, "", line)
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+                    value=line
+                }
+            }
+
+            END { print value }
+        '
+        return
+    fi
+
+    local files=(/etc/systemd/coredump.conf)
+
+    if compgen -G "/etc/systemd/coredump.conf.d/*.conf" > /dev/null; then
+        files+=(/etc/systemd/coredump.conf.d/*.conf)
+    fi
+
+    awk -v key="$key" '
+        BEGIN { in_section=0; value="" }
+
+        /^[[:space:]]*#/ { next }
+        /^[[:space:]]*$/ { next }
+
+        /^[[:space:]]*\[/ {
+            section=tolower($0)
+            gsub(/[[:space:]]/, "", section)
+            in_section=(section == "[coredump]")
+            next
+        }
+
+        in_section {
+            line=$0
+            sub(/^[[:space:]]*/, "", line)
+
+            if (line ~ "^" key "[[:space:]]*=") {
+                sub("^" key "[[:space:]]*=[[:space:]]*", "", line)
+                sub(/[[:space:]]*#.*/, "", line)
+                sub(/[[:space:]]*;.*/, "", line)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+                value=line
+            }
+        }
+
+        END { print value }
+    ' "${files[@]}" 2>/dev/null
+}
 check_results_file() {
     if [[ -e "$results_file" ]]; then
         rm -f "$results_file"
@@ -33,6 +103,58 @@ add_date_time(){
         echo "Hostname: $(hostname)" >> "$results_file"
         echo "Date: $(date)" >> "$results_file"
         echo "Kernel: $(uname -r)" >> "$results_file"
+}
+check_core_limits () {
+    local bad_lines
+    local process_size_max
+    local storage
+    local failed=0
+    local limit_files=(/etc/security/limits.conf)
+
+    if compgen -G "/etc/security/limits.d/*.conf" > /dev/null; then
+        limit_files+=(/etc/security/limits.d/*.conf)
+    fi
+
+    bad_lines=$(awk '
+        /^[[:space:]]*#/ { next }
+        NF < 4 { next }
+
+        $3 == "core" {
+            if ($4 == "unlimited" || $4 == "-1") {
+                print FILENAME ": " $0
+            } else if ($4 ~ /^[0-9]+$/ && $4 > 0) {
+                print FILENAME ": " $0
+            }
+        }
+    ' "${limit_files[@]}" 2>/dev/null)
+
+    if [[ -n "$bad_lines" ]]; then
+        fail "Core file size is not hardened: core limits greater than 0 found"
+        printf '%s\n' "$bad_lines"
+        failed=1
+    else
+        pass "Core file size is hardened: no core limits greater than 0 found"
+    fi
+
+    process_size_max=$(get_coredump_setting "ProcessSizeMax")
+
+    if [[ "$process_size_max" == "0" ]]; then
+        pass "systemd-coredump ProcessSizeMax is hardened: expected=0 actual=$process_size_max"
+    else
+        fail "systemd-coredump ProcessSizeMax is not hardened: expected=0 actual=${process_size_max:-not configured}"
+        failed=1
+    fi
+
+    storage=$(get_coredump_setting "Storage")
+
+    if [[ "$storage" == "none" ]]; then
+        pass "systemd-coredump Storage is hardened: expected=none actual=$storage"
+    else
+        fail "systemd-coredump Storage is not hardened: expected=none actual=${storage:-not configured}"
+        failed=1
+    fi
+
+    return "$failed"
 }
 check() {
     local mask=$1
@@ -368,11 +490,12 @@ check_sysctl_value "fs.suid_dumpable" "0"
 check_sysctl_value "kernel.dmesg_restrict" "1"
 check_sysctl_value "kernel.randomize_va_space" "2"
 check_sysctl_value "kernel.kptr_restrict" "2"
+check_core_limits
 
 echo
 echo -e "\e[33m--SERVICES--\e[0m"
 check_service named.service inactive
-check_service apport.service active
+check_service apport.service inactive
 check_service auditd active
 check_service chrony active
 check_service rsyslog active
