@@ -527,14 +527,17 @@ check 0137 /etc/shadow- either
 check 0137 /etc/gshadow either
 check 0137 /etc/gshadow- either
 check 0133 /etc/shells root
+check 0133 /etc/motd root
+check 0133 /etc/issue root
+check 0133 /etc/issue.net root
 check 0133 /etc/apt/trusted.gpg.d root
-check 0177 /etc/security/opasswd root
 check 0022 /etc/apt/trusted.gpg.d root
 check 0022 /etc/apt/auth.conf.d root
 check 0027 /etc/apt/auth.conf.d/* root
-check 0022 /usr/share/keyrings root
 check 0022 /etc/apt/sources.list.d root
 check 0133 /etc/apt/sources.list.d/* root
+check 0022 /usr/share/keyrings root
+check 0177 /etc/security/opasswd root
 
 echo
 echo -e "\e[33m--PROCESS HARDENING--\e[0m"
@@ -550,6 +553,8 @@ echo
 echo -e "\e[33m--SERVICES--\e[0m"
 check_service named.service inactive
 check_service apport.service inactive
+check_service autofs inactive
+check_service
 check_service auditd active
 check_service chrony active
 check_service rsyslog active
@@ -561,6 +566,8 @@ check_ssh
 echo
 echo -e "\e[33m--PACKAGES--\e[0m"
 check_package prelink "Prelink"
+check_package avahi-daemon.sock "avhu daemon"
+check_package apache2 "Apache"
 
 echo
 echo -e "\e[33m--KERNEL MODULES--\e[0m"
