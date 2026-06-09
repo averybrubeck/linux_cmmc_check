@@ -555,6 +555,7 @@ check_service named.service inactive
 check_service apport.service inactive
 check_service autofs inactive
 check_service nfs-server.service inactive
+check_service xinetd inactive
 check_service auditd active
 check_service chrony active
 check_service rsyslog active
@@ -577,6 +578,12 @@ check_package dovecot-imapd "Server Message Systems"
 check_package dovecot-pop3d "Server Message Systems"
 check_package ypserv "NIS Server Services"
 check_package cups "CUPS Printing"
+check_package rpcbind "rpcbind services"
+check_package samba "Samba services"
+check_package telnetd "Telnet service"
+check_package tftpd-hpa "tftp services"
+check_package squid "Squid web proxy"
+check_package xserver-common "X Window Server"
 
 echo
 echo -e "\e[33m--KERNEL MODULES--\e[0m"
