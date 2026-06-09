@@ -131,17 +131,24 @@ check_core_limits () {
     if [[ -n "$bad_lines" ]]; then
         fail "Core file size is not hardened: core limits greater than 0 found"
         printf '%s\n' "$bad_lines"
+        {
+            echo "Core file size is not hardened: core limits greater than 0 found"
+            printf '%s\n' "$bad_lines"
+        } >> "$results_file"
         failed=1
     else
         pass "Core file size is hardened: no core limits greater than 0 found"
+        echo "Core file size is hardened: no core limits greater than 0 found" >> "$results_file"
     fi
 
     process_size_max=$(get_coredump_setting "ProcessSizeMax")
 
     if [[ "$process_size_max" == "0" ]]; then
         pass "systemd-coredump ProcessSizeMax is hardened: expected=0 actual=$process_size_max"
+        echo "systemd-coredump ProcessSizeMax is hardened: expected=0 actual=$process_size_max" >> "$results_file"
     else
         fail "systemd-coredump ProcessSizeMax is not hardened: expected=0 actual=${process_size_max:-not configured}"
+        echo "systemd-coredump ProcessSizeMax is not hardened: expected=0 actual=${process_size_max:-not configured}" >> "$results_file"
         failed=1
     fi
 
@@ -149,8 +156,10 @@ check_core_limits () {
 
     if [[ "$storage" == "none" ]]; then
         pass "systemd-coredump Storage is hardened: expected=none actual=$storage"
+        echo "systemd-coredump Storage is hardened: expected=none actual=$storage" >> "$results_file"
     else
         fail "systemd-coredump Storage is not hardened: expected=none actual=${storage:-not configured}"
+        echo "systemd-coredump Storage is not hardened: expected=none actual=${storage:-not configured}" >> "$results_file"
         failed=1
     fi
 
