@@ -329,8 +329,8 @@ check 0022 /etc/apt/trusted.gpg.d root
 check 0022 /etc/apt/auth.conf.d root
 check 0027 /etc/apt/auth.conf.d/*  root
 check 0022 /usr/share/keyrings root
-check 0022 /etc/apt/sources.list.d
-check 0133 /etc/apt/sources.list.d/* 
+check 0022 /etc/apt/sources.list.d root
+check 0133 /etc/apt/sources.list.d/* root
 
 echo
 echo -e "\e[33m--SERVICES--\e[0m"
