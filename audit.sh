@@ -353,9 +353,9 @@ check 0133 /etc/apt/sources.list.d/* root
 echo
 echo -e "\e[33m--PROCESS HARDENING--\e[0m"
 check_sysctl_value "fs.protected_symlinks" "1"
-check_sysctl_vaule "kernel.yama.ptrace_scope" "1"
-check_sysctl_vaule "fs.suid_dumpable" "0"
-check_sysctl_vaule "kernel.dmesg_restrict" "1"
+check_sysctl_value "kernel.yama.ptrace_scope" "1"
+check_sysctl_value "fs.suid_dumpable" "0"
+check_sysctl_value "kernel.dmesg_restrict" "1"
 
 echo
 echo -e "\e[33m--SERVICES--\e[0m"
