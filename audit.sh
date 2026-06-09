@@ -324,8 +324,8 @@ check 0137 /etc/shadow- either
 check 0137 /etc/gshadow either
 check 0137 /etc/gshadow- either
 check 0133 /etc/shells root
-check 0022 /usr/share/keyrings root
-check 0022 /etc/apt/trusted.gpg.d root
+check 0133 /usr/share/keyrings root
+check 0133 /etc/apt/trusted.gpg.d root
 check 0177 /etc/security/opasswd root
 
 echo
