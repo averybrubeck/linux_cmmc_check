@@ -101,6 +101,16 @@ check_service() {
         fail "$svc is $actual (expected $expected)"
     fi
 }
+check_package() {
+    local package="$1"
+    local name="$2"
+
+    if dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -q "install ok installed"; then
+        fail "$name is not hardened: $package is installed"
+    else
+        pass "$name is hardened: $package is not installed"
+    fi
+}
 check_ufw() {
     local output
     local result="OK"
@@ -362,6 +372,7 @@ check_sysctl_value "kernel.kptr_restrict" "2"
 echo
 echo -e "\e[33m--SERVICES--\e[0m"
 check_service named.service inactive
+check_service apport.service active
 check_service auditd active
 check_service chrony active
 check_service rsyslog active
@@ -369,6 +380,10 @@ check_ufw
 check_mdatp
 check_aa
 check_ssh
+
+echo
+echo -e "\e[33m--PACKAGES--\e[0m"
+check_package prelink "Prelink"
 
 echo
 echo -e "\e[33m--KERNEL MODULES--\e[0m"
