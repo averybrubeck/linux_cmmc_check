@@ -69,6 +69,24 @@ check() {
         fail "$file mode=$p owner=$o group=$g"
     fi
 }
+check_sysctl_value () {
+    local proc="$1"
+    local expected="$2"
+    local value
+
+    value=$(sysctl -n "$proc" 2>/dev/null)
+
+    if [[ $? -ne 0 || -z "$value" ]]; then
+        fail "$proc could not be checked"
+        return 1
+    fi
+
+    if [[ "$value" == "$expected" ]]; then
+        pass "$proc is hardened: expected=$expected actual=$value"
+    else
+        fail "$proc is not hardened: expected=$expected actual=$value"
+    fi
+}
 check_service() {
     local svc=$1
     local expected=$2
@@ -327,10 +345,16 @@ check 0133 /etc/apt/trusted.gpg.d root
 check 0177 /etc/security/opasswd root
 check 0022 /etc/apt/trusted.gpg.d root
 check 0022 /etc/apt/auth.conf.d root
-check 0027 /etc/apt/auth.conf.d/*  root
+check 0027 /etc/apt/auth.conf.d/* root
 check 0022 /usr/share/keyrings root
 check 0022 /etc/apt/sources.list.d root
 check 0133 /etc/apt/sources.list.d/* root
+
+echo
+echo -e "\e[33m--PROCESS HARDENING--\e[0m"
+check_sysctl_value fs.protected_symlinks 1
+check_sysctl_vaule kernel.yama.ptrace_scope 1
+check_sysctl_vaule fs.suid_dumpable 0 
 
 echo
 echo -e "\e[33m--SERVICES--\e[0m"
