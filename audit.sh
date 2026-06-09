@@ -327,7 +327,7 @@ check 0133 /etc/shells root
 check 0133 /usr/share/keyrings root
 check 0133 /etc/apt/trusted.gpg.d root
 check 0177 /etc/security/opasswd root
-check 0122 /etc/apt/trusted.gpg.d root
+check 0022 /etc/apt/trusted.gpg.d root
 
 echo
 echo -e "\e[33m--SERVICES--\e[0m"
