@@ -361,6 +361,10 @@ check_ssh() {
     grep -Eq '^PasswordAuthentication\s+no' /etc/ssh/sshd_config || result="FAIL"
     grep -Eq '^PermitRootLogin\s+no' /etc/ssh/sshd_config || result="FAIL"
     grep -Eq '^PubkeyAuthentication\s+yes' /etc/ssh/sshd_config || result="FAIL"
+    grep -Eq '^ClientAliveInterval\s+120' /etc/ssh/sshd_config || result="FAIL"
+    grep -Eq '^ClientAliveCountMax\s+3' /etc/ssh/sshd_config || result="FAIL"
+    grep -Eq '^LoginGraceTime\s+60' /etc/ssh/sshd_config || result="FAIL"
+     grep -Eq '^MaxAuthTries\s+4' /etc/ssh/sshd_config || result="FAIL"
 
     if [[ "$result" == "OK" ]]; then
         pass "SSHD configuration is hardened | AC.L2-3.1.12"
@@ -368,7 +372,7 @@ check_ssh() {
         fail "SSHD configuration requires review"
     fi
 }
-check_kernel(){ 
+check_kernel() { 
 local kmd=$1 
 output=$(lsmod | grep -E "$kmd") 
 
@@ -518,6 +522,7 @@ check 0077 /etc/cron.weekly root
 check 0077 /etc/cron.monthly root
 check 0077 /etc/cron.d root
 check 0177 /etc/ssh/sshd_config root
+check 0177 /etc/ssh/* root 
 check 0133 /etc/passwd root
 check 0133 /etc/passwd- root
 check 0133 /etc/group root
