@@ -107,7 +107,6 @@ get_coredump_setting_lines () {
         }
     ' "${files[@]}" 2>/dev/null
 }
-
 check_coredump_setting () {
     local key="$1"
     local expected="$2"
@@ -815,6 +814,7 @@ check_fail2ban_jail() {
     fi
 }
 check_results_file
+echo "Role: ${1:-probe}" >> "$results_file"
 add_date_time
 
 echo -e "\e[33m--SYSTEM BASELINE CM.L2-3.4.1--\e[0m"
