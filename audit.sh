@@ -704,10 +704,9 @@ check_grub() {
     local cfg="/boot/grub/grub.cfg"
     local result="OK"
  
-    if [[ ! -e "$cfg" ]]; then
-        warn "$cfg does not exist; skipping GRUB check (Azure VM?)"
-        return
-    fi
+if [[ -e /boot/grub/grub.cfg ]]; then
+    check 0177 /boot/grub/grub.cfg root
+fi
  
     grep -qE '^\s*set\s+superusers=' "$cfg"   || result="FAIL"
     grep -qE '^\s*password_pbkdf2\s+' "$cfg"  || result="FAIL"
