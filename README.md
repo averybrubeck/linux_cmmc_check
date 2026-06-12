@@ -1,36 +1,27 @@
-# Baseline Validation Script
+# Linux Baseline Validation Script
 
-Verifies a host against the Post-Install Hardening baseline (CMMC L2 — CM.L2-3.4.1/3.4.2, least functionality). The Word doc is the authoritative baseline; this script only checks it.
+This script validates a Linux host against the approved post-install hardening baseline.
+
+The Word baseline remains the authoritative configuration standard. This script provides repeatable evidence that key baseline settings are present, active, or restricted as expected. It is intended to support baseline validation, revalidation, and evidence collection for Linux systems within the CMMC assessment boundary.
+
+## Supported systems
+
+This script is intended for hardened Linux servers running:
+
+- Debian 13 x86_64
+- Ubuntu 24.04 LTS x86_64
+
+Supported system roles:
+
+- `probe`
+- `gitlab`
+- `syslog`
+
+If no role is specified, the script defaults to `probe`.
 
 ## Usage
 
-Run as root after initial hardening is complete:
+Run the script as root after baseline hardening is complete:
 
 ```bash
 sudo ./baseline-check.sh [role]
-```
-
-`role` sets the approved listening-port list: `probe` (default), `gitlab`, or `syslog`.
-
-## What it checks
-
-File permissions, kernel/process hardening (sysctl, core dumps), services and packages (installed/active state), kernel modules (loaded at runtime), UFW, AppArmor, Defender (mdatp), SSH config (where installed), PAM/account policy, auditd rules + immutability, chrony sync, syslog forwarding, banners, AIDE, fail2ban, and externally listening ports per role.
-
-## Output
-
-- Console: color-coded `OK` / `FAIL` / `WARN` per check, with summary counts at the end.
-- `baseline-results.txt`: hostname, date, kernel, and passing-check details. Overwritten each run.
-
-## Workflow
-
-1. Run the script for the host's role.
-2. Remediate any FAILs per the hardening doc, re-run until clean.
-3. Screenshot the clean run and archive `baseline-results.txt` as evidence.
-
-WARNs are informational (e.g. loopback-only listeners) and don't require action.
-
-## Notes
-
-- Requires root for auditctl, stat on shadow files, and mdatp.
-- Kernel module checks are point-in-time (loaded now), not load-prevention.
-- GRUB checks auto-skip on Azure VMs without local grub.cfg.
