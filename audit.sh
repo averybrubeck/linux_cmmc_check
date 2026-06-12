@@ -264,14 +264,25 @@ check_sysctl_value () {
     fi
 }
 check_service() {
-    local svc=$1
-    local expected=$2
+    local svc="$1"
+    local expected="$2"
     local actual
 
-    actual=$(systemctl is-active "$svc" 2>/dev/null)
+    actual=$(systemctl is-active "$svc" 2>/dev/null || true)
+    [[ -z "$actual" ]] && actual="not-found"
+
+    if [[ "$expected" == "inactive" ]]; then
+        if [[ "$actual" == "active" ]]; then
+            fail "$svc is active and should not be running"
+        else
+            pass "$svc is not active: actual=$actual"
+            echo "$svc is not active: actual=$actual" >> "$results_file"
+        fi
+        return
+    fi
 
     if [[ "$actual" == "$expected" ]]; then
-        pass "$svc is $actual | AU.L2-3.3.1, CM.L2-3.4.6  "
+        pass "$svc is $actual | AU.L2-3.3.1, CM.L2-3.4.6"
         echo "$svc is $actual" >> "$results_file"
     else
         fail "$svc is $actual (expected $expected)"
@@ -417,7 +428,7 @@ if [[ "$output" == "" ]]; then
     pass "$kmd is not loaded | AC.L2-3.1.2 CM.L2-3.4.6, CM.L2-3.4.7 " 
     echo "$kmd is not loaded" >> "$results_file"
 else 
-    fail "kmd is enabled, please review" echo "$output" 
+    fail "$kmd is enabled, please review" echo "$output" 
 fi 
 }
 check_audit_immutable() {
@@ -802,7 +813,11 @@ check 0077 /etc/cron.weekly root
 check 0077 /etc/cron.monthly root
 check 0077 /etc/cron.d root
 check 0177 /etc/ssh/sshd_config root
-check 0177 /etc/ssh/* root 
+for key in /etc/ssh/ssh_host_*_key; do
+    [[ -e "$key" ]] || continue
+    [[ "$key" == *.pub ]] && continue
+    check 0177 "$key" root
+done
 check 0133 /etc/passwd root
 check 0133 /etc/passwd- root
 check 0133 /etc/group root
@@ -819,9 +834,15 @@ check 0133 /etc/issue.net root
 check 0133 /etc/apt/trusted.gpg.d root
 check 0022 /etc/apt/trusted.gpg.d root
 check 0022 /etc/apt/auth.conf.d root
-check 0027 /etc/apt/auth.conf.d/* root
+for f in /etc/apt/auth.conf.d/*; do
+    [[ -e "$f" ]] || continue
+    check 0027 "$f" root
+done
 check 0022 /etc/apt/sources.list.d root
-check 0133 /etc/apt/sources.list.d/* root
+for f in /etc/apt/sources.list.d/*; do
+    [[ -e "$f" ]] || continue
+    check 0133 "$f" root
+done
 check 0022 /usr/share/keyrings root
 check 0177 /etc/security/opasswd root
 
