@@ -294,8 +294,10 @@ check_package() {
 
     if dpkg-query -W -f='${Status}' "$package" 2>/dev/null | grep -q "install ok installed"; then
         fail "$name is not hardened: $package is installed"
+        echo "$name is not hardened: $package is installed" >> "$results_file"
     else
         pass "$name is hardened: $package is not installed"
+        echo "$name is hardened: $package is not installed" >> "$results_file"
     fi
 }
 check_ufw() {
