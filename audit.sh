@@ -410,7 +410,7 @@ local kmd=$1
 output=$(lsmod | grep -E "$kmd") 
 
 if [[ "$output" == "" ]]; then 
-    pass "$kmd is not loaded" | AC.L2-3.1.2 CM.L2-3.4.6, CM.L2-3.4.7 " 
+    pass "$kmd is not loaded | AC.L2-3.1.2 CM.L2-3.4.6, CM.L2-3.4.7 " 
     echo "$kmd is not loaded" >> "$results_file"
 else 
     fail "kmd is enabled, please review" echo "$output" 
