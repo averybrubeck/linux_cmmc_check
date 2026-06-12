@@ -390,14 +390,14 @@ check_ssh() {
         echo "\033[33mWARNING:\033[0m SSH service is installed but not active" >> "$results_file"
         return
     fi
-
-    grep -Eq '^PasswordAuthentication\s+no' /etc/ssh/sshd_config || result="FAIL"
-    grep -Eq '^PermitRootLogin\s+no' /etc/ssh/sshd_config || result="FAIL"
-    grep -Eq '^PubkeyAuthentication\s+yes' /etc/ssh/sshd_config || result="FAIL"
-    grep -Eq '^ClientAliveInterval\s+120' /etc/ssh/sshd_config || result="FAIL"
-    grep -Eq '^ClientAliveCountMax\s+3' /etc/ssh/sshd_config || result="FAIL"
-    grep -Eq '^LoginGraceTime\s+60' /etc/ssh/sshd_config || result="FAIL"
-     grep -Eq '^MaxAuthTries\s+4' /etc/ssh/sshd_config || result="FAIL"
+    output=$(sshd -T 2>/dev/null)
+    echo "$output" | grep -Eq '^PasswordAuthentication\s+no' /etc/ssh/sshd_config || result="FAIL"
+    echo "$output" | grep -Eq '^PermitRootLogin\s+no' /etc/ssh/sshd_config || result="FAIL"
+    echo "$output" | grep -Eq '^PubkeyAuthentication\s+yes' /etc/ssh/sshd_config || result="FAIL"
+    echo "$output" | grep -Eq '^ClientAliveInterval\s+120' /etc/ssh/sshd_config || result="FAIL"
+    echo "$output" | grep -Eq '^ClientAliveCountMax\s+3' /etc/ssh/sshd_config || result="FAIL"
+    echo "$output" | grep -Eq '^LoginGraceTime\s+60' /etc/ssh/sshd_config || result="FAIL"
+    echo "$output" | grep -Eq '^MaxAuthTries\s+4' /etc/ssh/sshd_config || result="FAIL"
 
     if [[ "$result" == "OK" ]]; then
         pass "SSHD configuration is hardened | AC.L2-3.1.12"
