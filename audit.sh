@@ -306,13 +306,17 @@ check_ufw() {
 
     echo "$output" | grep -qi "^status: active" || result="FAIL"
     echo "$output" | grep -qi "Default:.*deny (incoming" || result="FAIL"
+    echo "$output" | grep -qi "Default:.*allow (outgoing" || result="FAIL"
+    echo "$output" | grep -qi "Default:.*deny (routed" || result="FAIL"
 
     if [[ "$result" == "OK" ]]; then
-        pass "UFW is active and incoming traffic is denied by default | AC.L2-3.1.2, SC.L2-3.13.1 "
+        pass "UFW is active with default deny incoming, allow outgoing, and deny routed | AC.L2-3.1.2, SC.L2-3.13.1"
         echo "$output" >> "$results_file"
     else
         fail "UFW configuration requires review"
         echo "$output"
+        echo "UFW configuration requires review:" >> "$results_file"
+        echo "$output" >> "$results_file"
     fi
 }
 check_aa() {
