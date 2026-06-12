@@ -342,6 +342,39 @@ check_mdatp() {
         echo "$output" | jq '.realTimeProtectionEnabled'
     fi
 }
+check_chrony_sync() {
+    local leap
+ 
+    leap=$(chronyc tracking 2>/dev/null | grep -i 'Leap status' | awk -F: '{gsub(/^ +/,"",$2); print $2}')
+ 
+    if [[ "$leap" == "Normal" ]]; then
+        pass "Chrony is synchronized: leap status Normal | AU.L2-3.3.7"
+        echo "Chrony is synchronized: leap status Normal" >> "$results_file"
+    else
+        fail "Chrony synchronization requires review: leap status=${leap:-unknown}"
+    fi
+}
+check_banner() {
+    local result="OK"
+    local f
+ 
+    for f in /etc/issue /etc/issue.net; do
+        grep -qs 'AUTHORIZED ACCESS ONLY' "$f"                     || result="FAIL"
+        grep -qs 'Controlled Unclassified Information' "$f"        || result="FAIL"
+    done
+ 
+    # motd should be empty (or whitespace only)
+    if [[ -s /etc/motd ]] && grep -qE '[^[:space:]]' /etc/motd; then
+        result="FAIL"
+    fi
+ 
+    if [[ "$result" == "OK" ]]; then
+        pass "Login banners are configured and motd is empty | AC.L2-3.1.9"
+        echo "Login banners are configured and motd is empty" >> "$results_file"
+    else
+        fail "Login banners require review: missing required text or motd not empty"
+    fi
+}
 check_ssh() {
     local result="OK"
 
@@ -377,11 +410,23 @@ local kmd=$1
 output=$(lsmod | grep -E "$kmd") 
 
 if [[ "$output" == "" ]]; then 
-    pass "$kmd is disabled | AC.L2-3.1.2 CM.L2-3.4.6, CM.L2-3.4.7 " 
-    echo "$kmd is disabled" >> "$results_file"
+    pass "$kmd is not loaded" | AC.L2-3.1.2 CM.L2-3.4.6, CM.L2-3.4.7 " 
+    echo "$kmd is not loaded" >> "$results_file"
 else 
     fail "kmd is enabled, please review" echo "$output" 
 fi 
+}
+check_audit_immutable() {
+    local status
+ 
+    status=$(auditctl -s 2>/dev/null | grep -E '^enabled' | awk '{print $2}')
+ 
+    if [[ "$status" == "2" ]]; then
+        pass "Audit configuration is immutable until reboot: enabled=2 | AU.L2-3.3.8"
+        echo "Audit configuration is immutable: enabled=2" >> "$results_file"
+    else
+        fail "Audit immutability requires review: enabled=${status:-unknown} (expected 2)"
+    fi
 }
 check_ipfwd() {
     local val num
@@ -429,7 +474,7 @@ check_ports() {
     case "$role" in
         probe)
             # Approved probe ports
-            allowed_ports="3000 9392 6379 5432 514 22"
+            allowed_ports="3000 9392 6379 5432 514"
             ;;
 
         gitlab)
@@ -832,9 +877,9 @@ check_fail2ban_jail
 echo
 echo -e "\e[33m--PACKAGES--\e[0m"
 check_package prelink "Prelink"
-check_package avahi-daemon.sock "avhu daemon"
+check_package avahi-daemon "Avahi daemon"
 check_package apache2 "Apache"
-check_package ngix "Ngix"
+check_package nginx "Nginx"
 check_package bind9 "DNS Service"
 check_package vsftpd "FTP Package"
 check_package dnsmasq "dnsmasq"
