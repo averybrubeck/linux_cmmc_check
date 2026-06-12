@@ -509,6 +509,237 @@ check_ports() {
         echo "$loopback_ports" >> "$results_file"
     fi
 }
+check_pwquality() {
+    local file="/etc/security/pwquality.conf"
+    local result="OK"
+    local minlen minclass maxrepeat
+ 
+    if [[ ! -e "$file" ]]; then
+        fail "pwquality is not hardened: $file does not exist"
+        return
+    fi
+ 
+    minlen=$(grep -E '^\s*minlen\s*=' "$file" | tail -n1 | awk -F= '{gsub(/ /,"",$2); print $2}')
+    minclass=$(grep -E '^\s*minclass\s*=' "$file" | tail -n1 | awk -F= '{gsub(/ /,"",$2); print $2}')
+    maxrepeat=$(grep -E '^\s*maxrepeat\s*=' "$file" | tail -n1 | awk -F= '{gsub(/ /,"",$2); print $2}')
+ 
+    [[ "$minlen" =~ ^[0-9]+$ ]] && (( minlen >= 14 ))      || result="FAIL"
+    [[ "$minclass" =~ ^[0-9]+$ ]] && (( minclass >= 4 ))   || result="FAIL"
+    [[ "$maxrepeat" =~ ^[0-9]+$ ]] && (( maxrepeat <= 3 )) || result="FAIL"
+ 
+    if [[ "$result" == "OK" ]]; then
+        pass "Password complexity is hardened: minlen=$minlen minclass=$minclass maxrepeat=$maxrepeat | IA.L2-3.5.7"
+        echo "Password complexity is hardened: minlen=$minlen minclass=$minclass maxrepeat=$maxrepeat" >> "$results_file"
+    else
+        fail "Password complexity requires review: minlen=${minlen:-unset} minclass=${minclass:-unset} maxrepeat=${maxrepeat:-unset}"
+    fi
+}
+check_pwhistory() {
+    local line val
+ 
+    line=$(grep -E '^\s*password\s+.*pam_pwhistory\.so' /etc/pam.d/common-password 2>/dev/null | head -n1)
+ 
+    if [[ -z "$line" ]]; then
+        fail "Password history is not hardened: pam_pwhistory not present in common-password"
+        return
+    fi
+ 
+    val=$(echo "$line" | grep -oE 'remember=[0-9]+' | cut -d= -f2)
+ 
+    if [[ "$val" =~ ^[0-9]+$ ]] && (( val >= 24 )); then
+        pass "Password history is hardened: remember=$val | IA.L2-3.5.8"
+        echo "Password history is hardened: remember=$val" >> "$results_file"
+    else
+        fail "Password history requires review: remember=${val:-unset}"
+    fi
+}
+check_logindefs() {
+    local result="OK"
+    local maxd mind warn_age enc
+ 
+    maxd=$(grep -E '^PASS_MAX_DAYS' /etc/login.defs | awk '{print $2}')
+    mind=$(grep -E '^PASS_MIN_DAYS' /etc/login.defs | awk '{print $2}')
+    warn_age=$(grep -E '^PASS_WARN_AGE' /etc/login.defs | awk '{print $2}')
+    enc=$(grep -E '^ENCRYPT_METHOD' /etc/login.defs | awk '{print $2}')
+ 
+    [[ "$maxd" =~ ^[0-9]+$ ]] && (( maxd <= 365 && maxd > 0 )) || result="FAIL"
+    [[ "$mind" =~ ^[0-9]+$ ]] && (( mind >= 1 ))               || result="FAIL"
+    [[ "$warn_age" =~ ^[0-9]+$ ]] && (( warn_age >= 14 ))      || result="FAIL"
+    # Debian 13 default is YESCRYPT; doc allows SHA512 — accept either
+    [[ "$enc" == "SHA512" || "$enc" == "YESCRYPT" ]]           || result="FAIL"
+ 
+    if [[ "$result" == "OK" ]]; then
+        pass "Password aging/hashing is hardened: max=$maxd min=$mind warn=$warn_age method=$enc | IA.L2-3.5.8, IA.L2-3.5.10"
+        echo "Password aging/hashing is hardened: max=$maxd min=$mind warn=$warn_age method=$enc" >> "$results_file"
+    else
+        fail "Password aging/hashing requires review: max=${maxd:-unset} min=${mind:-unset} warn=${warn_age:-unset} method=${enc:-unset}"
+    fi
+}
+check_inactive() {
+    local val
+ 
+    val=$(useradd -D 2>/dev/null | grep -E '^INACTIVE=' | cut -d= -f2)
+ 
+    if [[ "$val" =~ ^[0-9]+$ ]] && (( val <= 35 && val >= 0 )); then
+        pass "Account inactivity lockout is hardened: INACTIVE=$val | IA.L2-3.5.6"
+        echo "Account inactivity lockout is hardened: INACTIVE=$val" >> "$results_file"
+    else
+        fail "Account inactivity lockout requires review: INACTIVE=${val:-unset}"
+    fi
+}
+check_faillock() {
+    local file="/etc/pam.d/common-auth"
+    local result="OK"
+    local preauth authfail
+ 
+    preauth=$(grep -E '^\s*auth\s+required\s+pam_faillock\.so\s+preauth' "$file" 2>/dev/null)
+    authfail=$(grep -E '^\s*auth\s+\[default=die\]\s+pam_faillock\.so\s+authfail' "$file" 2>/dev/null)
+ 
+    [[ -n "$preauth" ]]  || result="FAIL"
+    [[ -n "$authfail" ]] || result="FAIL"
+    echo "$preauth"  | grep -qE 'deny=5'          || result="FAIL"
+    echo "$preauth"  | grep -qE 'unlock_time=900' || result="FAIL"
+    echo "$authfail" | grep -qE 'deny=5'          || result="FAIL"
+    echo "$authfail" | grep -qE 'unlock_time=900' || result="FAIL"
+ 
+    if [[ "$result" == "OK" ]]; then
+        pass "Account lockout is hardened: faillock deny=5 unlock_time=900 | AC.L2-3.1.8"
+        echo "Account lockout is hardened: faillock deny=5 unlock_time=900" >> "$results_file"
+    else
+        fail "Account lockout requires review: pam_faillock missing or misconfigured in common-auth"
+    fi
+}
+check_sudo_logging() {
+    if grep -rqsE '^\s*Defaults\s+logfile=' /etc/sudoers /etc/sudoers.d/ 2>/dev/null; then
+        pass "Sudo logging is hardened: Defaults logfile is set | AU.L2-3.3.1"
+        echo "Sudo logging is hardened: Defaults logfile is set" >> "$results_file"
+    else
+        fail "Sudo logging requires review: no Defaults logfile entry found"
+    fi
+}
+check_tmout() {
+    local file="/etc/profile.d/tmout.sh"
+    local result="OK"
+    local val
+ 
+    if [[ ! -e "$file" ]]; then
+        fail "Session timeout is not hardened: $file does not exist"
+        return
+    fi
+ 
+    val=$(grep -E '^\s*TMOUT=' "$file" | tail -n1 | cut -d= -f2)
+ 
+    [[ "$val" =~ ^[0-9]+$ ]] && (( val <= 900 && val > 0 )) || result="FAIL"
+    grep -qE '^\s*readonly\s+TMOUT' "$file"                 || result="FAIL"
+    grep -qE '^\s*export\s+TMOUT'   "$file"                 || result="FAIL"
+ 
+    if [[ "$result" == "OK" ]]; then
+        pass "Session timeout is hardened: TMOUT=$val readonly+exported | AC.L2-3.1.10, AC.L2-3.1.11"
+        echo "Session timeout is hardened: TMOUT=$val" >> "$results_file"
+    else
+        fail "Session timeout requires review: TMOUT=${val:-unset} in $file"
+    fi
+}
+check_grub() {
+    local cfg="/boot/grub/grub.cfg"
+    local result="OK"
+ 
+    if [[ ! -e "$cfg" ]]; then
+        warn "$cfg does not exist; skipping GRUB check (Azure VM?)"
+        return
+    fi
+ 
+    grep -qE '^\s*set\s+superusers=' "$cfg"   || result="FAIL"
+    grep -qE '^\s*password_pbkdf2\s+' "$cfg"  || result="FAIL"
+ 
+    if [[ "$result" == "OK" ]]; then
+        pass "GRUB superuser and password are set | AC.L2-3.1.5, CM.L2-3.4.5"
+        echo "GRUB superuser and password are set" >> "$results_file"
+    else
+        fail "GRUB configuration requires review: superuser/password_pbkdf2 not found in grub.cfg"
+    fi
+}
+check_audit_rules() {
+    local result="OK"
+    local loaded missing=""
+    local key
+ 
+    loaded=$(auditctl -l 2>/dev/null)
+ 
+    if [[ -z "$loaded" || "$loaded" == "No rules" ]]; then
+        fail "Audit rules are not hardened: no rules loaded"
+        return
+    fi
+ 
+    # One representative match per rule group in the doc
+    for key in identity privilege privesc time-change mounts sshd firewall mac auditconfig logins; do
+        echo "$loaded" | grep -q -- "-k $key" || { result="FAIL"; missing="$missing $key"; }
+    done
+ 
+    if [[ "$result" == "OK" ]]; then
+        pass "Audit rules are loaded: all expected rule keys present | AU.L2-3.3.1, AU.L2-3.3.2"
+        echo "Audit rules are loaded: all expected rule keys present" >> "$results_file"
+    else
+        fail "Audit rules require review: missing keys:$missing"
+    fi
+}
+check_syslog_forwarding() {
+    local line
+ 
+    line=$(grep -hsE '^\s*\*\.\*\s+@@' /etc/rsyslog.conf /etc/rsyslog.d/*.conf 2>/dev/null | head -n1)
+ 
+    if [[ -n "$line" ]]; then
+        # Don't pass if the placeholder was never replaced
+        if echo "$line" | grep -q '<SIEM_IP>'; then
+            fail "Syslog forwarding requires review: <SIEM_IP> placeholder was never replaced"
+            return
+        fi
+        pass "Syslog forwarding to SIEM is configured: $line | AU.L2-3.3.1, SI.L2-3.14.6"
+        echo "Syslog forwarding to SIEM is configured: $line" >> "$results_file"
+    else
+        fail "Syslog forwarding requires review: no '*.* @@' forwarding rule found"
+    fi
+}
+check_aide() {
+    local result="OK"
+    local cron="/etc/cron.daily/aide-check"
+    local shebang
+ 
+    [[ -e /var/lib/aide/aide.db ]] || result="FAIL"
+ 
+    if [[ -e /var/lib/aide/aide.db.new ]]; then
+        warn "AIDE: aide.db.new still present; baseline may not have been activated"
+    fi
+ 
+    if [[ -e "$cron" ]]; then
+        [[ -x "$cron" ]] || result="FAIL"
+        shebang=$(head -n1 "$cron")
+        [[ "$shebang" == "#!/bin/sh" || "$shebang" == "#!/bin/bash" ]] || result="FAIL"
+    else
+        result="FAIL"
+    fi
+ 
+    if [[ "$result" == "OK" ]]; then
+        pass "AIDE baseline exists and daily check is in place | SI.L2-3.14.1, AU.L2-3.3.8"
+        echo "AIDE baseline exists and daily check is in place" >> "$results_file"
+    else
+        fail "AIDE requires review: db=$([[ -e /var/lib/aide/aide.db ]] && echo present || echo missing) cron=$([[ -x "$cron" ]] && echo ok || echo bad) shebang=${shebang:-none}"
+    fi
+}
+check_fail2ban_jail() {
+    if ! command -v sshd >/dev/null 2>&1; then
+        pass "fail2ban sshd jail not required: sshd not installed"
+        echo "fail2ban sshd jail not required: sshd not installed" >> "$results_file"
+        return
+    fi
+ 
+    if fail2ban-client status sshd 2>/dev/null | grep -q 'Currently banned'; then
+        pass "fail2ban sshd jail is active | AC.L2-3.1.8, SI.L2-3.14.6"
+        echo "fail2ban sshd jail is active" >> "$results_file"
+    else
+        fail "fail2ban sshd jail requires review: jail not active"
+    fi
+}
 check_results_file
 add_date_time
 
@@ -553,6 +784,11 @@ check_sysctl_value "fs.suid_dumpable" "0"
 check_sysctl_value "kernel.dmesg_restrict" "1"
 check_sysctl_value "kernel.randomize_va_space" "2"
 check_sysctl_value "kernel.kptr_restrict" "2"
+check_sysctl_value "net.ipv4.conf.all.accept_redirects" "0"
+check_sysctl_value "net.ipv4.conf.all.send_redirects" "0"
+check_sysctl_value "net.ipv4.conf.all.secure_redirects" "0"
+check_sysctl_value "net.ipv4.tcp_syncookies" "1"
+check_sysctl_value "net.ipv4.conf.all.log_martians" "1"
 check_core_limits
 
 echo
@@ -569,6 +805,29 @@ check_ufw
 check_mdatp
 check_aa
 check_ssh
+
+echo
+echo -e "\e[33m--AUTH AND ACCOUNT POLICY--\e[0m"
+check_pwquality
+check_logindefs
+check_inactive
+check_pwhistory
+check_faillock
+check_sudo_logging
+check 0337 /etc/sudoers.d/logging root
+check_tmout
+
+echo
+echo -e "\e[33m--BOOT / AUDIT / TIME / LOGGING--\e[0m"
+check_grub
+check 0177 /boot/grub/grub.cfg root
+check_audit_rules
+check_audit_immutable
+check_chrony_sync
+check_syslog_forwarding
+check_banner
+check_aide
+check_fail2ban_jail
 
 echo
 echo -e "\e[33m--PACKAGES--\e[0m"
