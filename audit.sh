@@ -376,10 +376,10 @@ check_banner() {
     fi
 }
 check_ssh() {
-    local result="OK"
+    local output result="OK"
 
     if ! command -v sshd >/dev/null 2>&1; then
-        pass "SSH service is not installed | AC.L2-3.1.12, SC.L2-3.13.8 "
+        pass "SSH service is not installed | AC.L2-3.1.12, SC.L2-3.13.8"
         echo "SSH service is not installed" >> "$results_file"
         return
     fi
@@ -387,22 +387,26 @@ check_ssh() {
     if ! systemctl is-active ssh >/dev/null 2>&1 && \
        ! systemctl is-active sshd >/dev/null 2>&1; then
         warn "SSH service is installed but not active"
-        echo "\033[33mWARNING:\033[0m SSH service is installed but not active" >> "$results_file"
+        echo "WARN: SSH service is installed but not active" >> "$results_file"
         return
     fi
+
     output=$(sshd -T 2>/dev/null)
-    echo "$output" | grep -Eq '^PasswordAuthentication\s+no' /etc/ssh/sshd_config || result="FAIL"
-    echo "$output" | grep -Eq '^PermitRootLogin\s+no' /etc/ssh/sshd_config || result="FAIL"
-    echo "$output" | grep -Eq '^PubkeyAuthentication\s+yes' /etc/ssh/sshd_config || result="FAIL"
-    echo "$output" | grep -Eq '^ClientAliveInterval\s+120' /etc/ssh/sshd_config || result="FAIL"
-    echo "$output" | grep -Eq '^ClientAliveCountMax\s+3' /etc/ssh/sshd_config || result="FAIL"
-    echo "$output" | grep -Eq '^LoginGraceTime\s+60' /etc/ssh/sshd_config || result="FAIL"
-    echo "$output" | grep -Eq '^MaxAuthTries\s+4' /etc/ssh/sshd_config || result="FAIL"
+
+    echo "$output" | grep -qE '^passwordauthentication[[:space:]]+no$' || result="FAIL"
+    echo "$output" | grep -qE '^permitrootlogin[[:space:]]+no$' || result="FAIL"
+    echo "$output" | grep -qE '^pubkeyauthentication[[:space:]]+yes$' || result="FAIL"
+    echo "$output" | grep -qE '^clientaliveinterval[[:space:]]+120$' || result="FAIL"
+    echo "$output" | grep -qE '^clientalivecountmax[[:space:]]+3$' || result="FAIL"
+    echo "$output" | grep -qE '^logingracetime[[:space:]]+60$' || result="FAIL"
+    echo "$output" | grep -qE '^maxauthtries[[:space:]]+4$' || result="FAIL"
 
     if [[ "$result" == "OK" ]]; then
-        pass "SSHD configuration is hardened | AC.L2-3.1.12"
+        pass "SSHD effective configuration is hardened | AC.L2-3.1.12"
+        echo "SSHD effective configuration is hardened" >> "$results_file"
     else
-        fail "SSHD configuration requires review"
+        fail "SSHD effective configuration requires review"
+        echo "$output" | grep -E 'passwordauthentication|permitrootlogin|pubkeyauthentication|clientaliveinterval|clientalivecountmax|logingracetime|maxauthtries'
     fi
 }
 check_kernel() { 
