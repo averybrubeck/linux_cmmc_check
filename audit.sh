@@ -254,13 +254,16 @@ check_sysctl_value () {
 
     if [[ $? -ne 0 || -z "$value" ]]; then
         fail "$proc could not be checked"
+        echo "$proc could not be checked" >> "$results_file"
         return 1
     fi
 
     if [[ "$value" == "$expected" ]]; then
         pass "$proc is hardened: expected=$expected actual=$value"
+        echo "$proc is hardened: expected=$expected actual=$value" >> "$results_file"
     else
         fail "$proc is not hardened: expected=$expected actual=$value"
+        echo "$proc is not hardened: expected=$expected actual=$value" >> "$results_file"
     fi
 }
 check_service() {
