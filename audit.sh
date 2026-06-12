@@ -420,16 +420,21 @@ check_ssh() {
         echo "$output" | grep -E 'passwordauthentication|permitrootlogin|pubkeyauthentication|clientaliveinterval|clientalivecountmax|logingracetime|maxauthtries'
     fi
 }
-check_kernel() { 
-local kmd=$1 
-output=$(lsmod | grep -E "$kmd") 
+check_kernel() {
+    local kmd="$1"
+    local output
 
-if [[ "$output" == "" ]]; then 
-    pass "$kmd is not loaded | AC.L2-3.1.2 CM.L2-3.4.6, CM.L2-3.4.7 " 
-    echo "$kmd is not loaded" >> "$results_file"
-else 
-    fail "$kmd is enabled, please review" echo "$output" 
-fi 
+    output=$(lsmod | awk -v mod="$kmd" '$1 == mod { print }')
+
+    if [[ -z "$output" ]]; then
+        pass "$kmd is not loaded | AC.L2-3.1.2, CM.L2-3.4.6, CM.L2-3.4.7"
+        echo "$kmd is not loaded" >> "$results_file"
+    else
+        fail "$kmd is loaded, please review"
+        echo "$output"
+        echo "$kmd is loaded:" >> "$results_file"
+        echo "$output" >> "$results_file"
+    fi
 }
 check_audit_immutable() {
     local status
