@@ -845,7 +845,6 @@ check 0133 /etc/shells root
 check 0133 /etc/motd root
 check 0133 /etc/issue root
 check 0133 /etc/issue.net root
-check 0133 /etc/apt/trusted.gpg.d root
 check 0022 /etc/apt/trusted.gpg.d root
 check 0022 /etc/apt/auth.conf.d root
 for f in /etc/apt/auth.conf.d/*; do
