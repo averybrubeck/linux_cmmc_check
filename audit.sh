@@ -871,7 +871,6 @@ check_sysctl_value "net.ipv4.conf.all.accept_redirects" "0"
 check_sysctl_value "net.ipv4.conf.all.send_redirects" "0"
 check_sysctl_value "net.ipv4.conf.all.secure_redirects" "0"
 check_sysctl_value "net.ipv4.tcp_syncookies" "1"
-check_sysctl_value "net.ipv4.conf.all.log_martians" "1"
 check_core_limits
 
 echo
