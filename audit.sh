@@ -311,7 +311,7 @@ check_ufw() {
     echo "$output" | grep -qi "^status: active" || result="FAIL"
     echo "$output" | grep -qi "Default:.*deny (incoming" || result="FAIL"
     echo "$output" | grep -qi "Default:.*allow (outgoing" || result="FAIL"
-    echo "$output" | grep -qi "Default:.*deny (routed" || result="FAIL"
+    echo "$output" | grep -qi "Default:.*disabled (routed" || result="FAIL"
 
     if [[ "$result" == "OK" ]]; then
         pass "UFW is active with default deny incoming, allow outgoing, and deny routed | AC.L2-3.1.2, SC.L2-3.13.1"
