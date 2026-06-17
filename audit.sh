@@ -746,7 +746,7 @@ check_audit_rules() {
  
     # One representative match per rule group in the doc
     for key in identity privilege privesc time-change mounts sshd firewall mac auditconfig logins; do
-        echo "$loaded" | grep -q -- "-k $key" || { result="FAIL"; missing="$missing $key"; }
+        echo "$loaded" | grep -qE -- "(-k|key=)[[:space:]]*$key(\$|[[:space:]])" || { result="FAIL"; missing="$missing $key"; }
     done
  
     if [[ "$result" == "OK" ]]; then
