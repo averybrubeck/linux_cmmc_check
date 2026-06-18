@@ -24,4 +24,4 @@ If no role is specified, the script defaults to `probe`.
 Run the script as root after baseline hardening is complete:
 
 ```bash
-sudo ./baseline-check.sh [role]
+sudo ./audit.sh [role] | less -R
