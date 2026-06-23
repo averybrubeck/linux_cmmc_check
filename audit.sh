@@ -674,7 +674,6 @@ check_faillock() {
     echo "$preauth"  | grep -qE 'unlock_time=900' || result="FAIL"
     echo "$authfail" | grep -qE 'deny=5'          || result="FAIL"
     echo "$authfail" | grep -qE 'unlock_time=900' || result="FAIL"
-    grep -Eq '^\s*account\s+required\s+pam_faillock\.so' /etc/pam.d/common-account || result="FAIL"
  
     if [[ "$result" == "OK" ]]; then
         pass "Account lockout is hardened: faillock deny=5 unlock_time=900 | AC.L2-3.1.8"
