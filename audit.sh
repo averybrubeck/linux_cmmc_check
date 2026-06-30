@@ -928,7 +928,7 @@ check_tmout
 
 echo
 echo -e "\e[33m--BOOT / AUDIT / TIME / LOGGING--\e[0m"
-if [[ "$SYSTEM_ROLE" == "gitlab" ]]; then
+if [[ "$SYSTEM_ROLE" == "gitlab" || "$SYSTEM_ROLE" == "syslog" ]]; then
     warn "GRUB password check skipped for GitLab VM role; Azure Serial Console/GRUB access is retained for VM recovery"
     echo "WARN: GRUB password check skipped for GitLab VM role; Azure Serial Console/GRUB access is retained for VM recovery" >> "$results_file"
 else
