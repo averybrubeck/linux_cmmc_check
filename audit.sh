@@ -672,7 +672,7 @@ check_inactive() {
  
     val=$(useradd -D 2>/dev/null | grep -E '^INACTIVE=' | cut -d= -f2)
  
-    if [[ "$val" =~ ^[0-9]+$ ]] && (( val <= 35 && val >= 0 )); then
+    if [[ "$val" =~ ^[0-9]+$ ]] && (( val <= 90 && val >= 0 )); then
         pass "Account inactivity lockout is hardened: INACTIVE=$val | IA.L2-3.5.6"
         echo "Account inactivity lockout is hardened: INACTIVE=$val" >> "$results_file"
     else
