@@ -507,7 +507,9 @@ check_ports() {
 
         gitlab)
             # Approved GitLab VM ports
-            allowed_ports="22 80 443 8060"
+            # 8060 = reverse proxy for web hosting
+            # 9094 is gitlab alert manager
+            allowed_ports="22 80 443 8060 9094"
             ;;
 
         syslog)
