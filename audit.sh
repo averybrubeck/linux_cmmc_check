@@ -814,8 +814,9 @@ check_fail2ban_jail() {
         fail "fail2ban sshd jail requires review: jail not active"
     fi
 }
+SYSTEM_ROLE="${1:-probe}"
 check_results_file
-echo "Role: ${1:-probe}" >> "$results_file"
+echo "Role: $SYSTEM_ROLE" >> "$results_file"
 add_date_time
 
 echo -e "\e[33m--SYSTEM BASELINE CM.L2-3.4.1--\e[0m"
@@ -884,7 +885,12 @@ check_service xinetd inactive
 check_service auditd active
 check_service chrony active
 check_service rsyslog active
-check_ufw
+if [[ "$SYSTEM_ROLE" == "gitlab" || "$SYSTEM_ROLE" == "syslog" ]]; then
+    warn "UFW check skipped for $SYSTEM_ROLE VM role; Azure NSGs are used to control inbound and outbound traffic"
+    echo "WARN: UFW check skipped for $SYSTEM_ROLE VM role; Azure NSGs are used to control inbound and outbound traffic" >> "$results_file"
+else
+    check_ufw
+fi
 check_mdatp
 check_aa
 check_ssh
@@ -902,7 +908,12 @@ check_tmout
 
 echo
 echo -e "\e[33m--BOOT / AUDIT / TIME / LOGGING--\e[0m"
-check_grub
+if [[ "$SYSTEM_ROLE" == "gitlab" ]]; then
+    warn "GRUB password check skipped for GitLab VM role; Azure Serial Console/GRUB access is retained for VM recovery"
+    echo "WARN: GRUB password check skipped for GitLab VM role; Azure Serial Console/GRUB access is retained for VM recovery" >> "$results_file"
+else
+    check_grub
+fi
 check 0177 /boot/grub/grub.cfg root
 check_audit_rules
 check_audit_immutable
@@ -960,7 +971,6 @@ check_kernel usb_storage
 
 echo
 echo -e "\e[33m--OPEN PORTS--\e[0m"
-SYSTEM_ROLE="${1:-probe}"
 check_ports "$SYSTEM_ROLE"
 
 echo
