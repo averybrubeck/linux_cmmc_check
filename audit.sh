@@ -507,7 +507,7 @@ check_ports() {
 
         gitlab)
             # Approved GitLab VM ports
-            allowed_ports="22 80 443"
+            allowed_ports="22 80 443 8060"
             ;;
 
         syslog)
