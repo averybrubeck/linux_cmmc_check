@@ -16,6 +16,23 @@ warn() {
     ((WARN_COUNT++))
     printf '\033[33mWARN\033[0m %s\n' "$*"
 }
+
+# PAM stack changes can lock out local/remote authentication if misconfigured.
+# Default these checks to warning-only while still recording the finding.
+# Set PAM_WARN_ONLY=0 before running the script to make PAM findings hard failures again.
+PAM_WARN_ONLY="${PAM_WARN_ONLY:-1}"
+
+pam_issue() {
+    local message="$1"
+
+    if [[ "$PAM_WARN_ONLY" == "1" ]]; then
+        warn "$message"
+        echo "WARN: $message" >> "$results_file"
+    else
+        fail "$message"
+        echo "$message" >> "$results_file"
+    fi
+}
 require_cmd() {
     command -v "$1" >/dev/null 2>&1 || {
         fail "$1 is not installed"
@@ -590,7 +607,7 @@ check_pwquality() {
     local minlen minclass maxrepeat
  
     if [[ ! -e "$file" ]]; then
-        fail "pwquality is not hardened: $file does not exist"
+        pam_issue "pwquality is not hardened: $file does not exist"
         return
     fi
  
@@ -606,7 +623,7 @@ check_pwquality() {
         pass "Password complexity is hardened: minlen=$minlen minclass=$minclass maxrepeat=$maxrepeat | IA.L2-3.5.7"
         echo "Password complexity is hardened: minlen=$minlen minclass=$minclass maxrepeat=$maxrepeat" >> "$results_file"
     else
-        fail "Password complexity requires review: minlen=${minlen:-unset} minclass=${minclass:-unset} maxrepeat=${maxrepeat:-unset}"
+        pam_issue "Password complexity requires review: minlen=${minlen:-unset} minclass=${minclass:-unset} maxrepeat=${maxrepeat:-unset}"
     fi
 }
 check_pwhistory() {
@@ -615,7 +632,7 @@ check_pwhistory() {
     line=$(grep -E '^\s*password\s+.*pam_pwhistory\.so' /etc/pam.d/common-password 2>/dev/null | head -n1)
  
     if [[ -z "$line" ]]; then
-        fail "Password history is not hardened: pam_pwhistory not present in common-password"
+        pam_issue "Password history is not hardened: pam_pwhistory not present in common-password"
         return
     fi
  
@@ -625,7 +642,7 @@ check_pwhistory() {
         pass "Password history is hardened: remember=$val | IA.L2-3.5.8"
         echo "Password history is hardened: remember=$val" >> "$results_file"
     else
-        fail "Password history requires review: remember=${val:-unset}"
+        pam_issue "Password history requires review: remember=${val:-unset}"
     fi
 }
 check_logindefs() {
@@ -681,7 +698,7 @@ check_faillock() {
         pass "Account lockout is hardened: faillock deny=5 unlock_time=900 | AC.L2-3.1.8"
         echo "Account lockout is hardened: faillock deny=5 unlock_time=900" >> "$results_file"
     else
-        fail "Account lockout requires review: pam_faillock missing or misconfigured in common-auth"
+        pam_issue "Account lockout requires review: pam_faillock missing or misconfigured in common-auth"
     fi
 }
 check_sudo_logging() {
@@ -897,6 +914,9 @@ check_ssh
 
 echo
 echo -e "\e[33m--AUTH AND ACCOUNT POLICY--\e[0m"
+if [[ "$PAM_WARN_ONLY" == "1" ]]; then
+    echo "NOTE: PAM module findings are warning-only; review/test changes carefully to avoid authentication lockout" >> "$results_file"
+fi
 check_pwquality
 check_logindefs
 check_inactive
