@@ -762,8 +762,9 @@ check_audit_rules() {
         return
     fi
  
-    # One representative match per rule group in the doc
-    for key in identity privilege privesc time-change mounts sshd firewall mac auditconfig logins; do
+    # One representative match per required OS baseline audit rule group
+    # Role-specific audit keys, such as sshd or firewall, are checked in the applicable role/application baseline.
+    for key in identity privilege privesc time-change mounts logins securityconfig accountpolicy sysctl kernelmodules mac auditconfig; do
         echo "$loaded" | grep -qE -- "(-k|key=)[[:space:]]*$key(\$|[[:space:]])" || { result="FAIL"; missing="$missing $key"; }
     done
  
